@@ -144,6 +144,8 @@ func autocompleteDo(prefix string, paths []string, cType string) {
 			for choice, children := range choices {
 				if children {
 					choice += "/"
+				} else {
+					choice += " "
 				}
 				fmt.Println(prefix + choice)
 			}
