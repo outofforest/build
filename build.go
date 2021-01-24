@@ -171,7 +171,9 @@ func choicesForPrefix(paths []string, prefix string) map[string]bool {
 				choice = choice[:endPos]
 				children = true
 			}
-			choices[choice] = children
+			if _, ok := choices[choice]; !ok || children {
+				choices[choice] = children
+			}
 		}
 	}
 	return choices
