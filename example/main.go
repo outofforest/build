@@ -16,7 +16,7 @@ func commandA(ctx context.Context, deps build.DepsFunc) error {
 	return nil
 }
 
-func commandAA(ctx context.Context, deps build.DepsFunc) error {
+func commandAA(ctx context.Context) error {
 	fmt.Println("AA executed")
 	return nil
 }
