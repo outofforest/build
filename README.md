@@ -11,7 +11,7 @@ Advantages over all the other available packages:
   
 ## Example
 
-Take a look at [example/main.go](./blob/main/example/main.go)
+Take a look at [example/main.go](../blob/main/example/main.go)
   
 ## First compilation
 
