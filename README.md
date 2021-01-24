@@ -3,15 +3,15 @@
 Yet another implementation of Makefile concept in go.
 Advantages over all the other available packages:
 - go only, compile and commit to your repo
-- no magic commands discovery based on go source code, you explicitly
-  declare paths and functions for your command
-- bash autocompletion
+- no magic command discovery based on go source code, you explicitly
+  declare paths and functions for your commands
+- bash autocompletion supported
 - command functions are executed using IoC container so they may receive
   any interfaces required to do the job
   
 ## Example
 
-Take a look at [example/main.go](blob/main/example/main.go)
+Take a look at [example/main.go](./blob/main/example/main.go)
   
 ## First compilation
 
