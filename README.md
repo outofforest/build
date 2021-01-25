@@ -16,8 +16,8 @@ Take a look at [example/main.go](../main/example/main.go)
 ## First compilation
 
 This build system is written in pure go so you have to compile it 
-using `go build` before first usage. Then you may commit this into your repo
-like you would normally do with your Makefile.
+using `go build` before first usage. You may write little bash wrapper which compiles
+`build` if binary doesn't exist or do it manually once and commit to your repo (not recommended).
 
 Taking this into consideration one of the commands available in this executable
 should be responsible for compiling `build` itself so you don't need to use `go build`
