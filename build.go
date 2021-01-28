@@ -111,7 +111,7 @@ func Do(name string, resolver Executor) {
 func execute(paths []string, resolver Executor) {
 	pathsTrimmed := make([]string, 0, len(paths))
 	for _, p := range paths {
-		if p[len(p)-1:] == "/" {
+		if p[len(p)-1] == '/' {
 			p = p[:len(p)-1]
 		}
 		pathsTrimmed = append(pathsTrimmed, p)
