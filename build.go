@@ -154,7 +154,10 @@ func autocompleteDo(prefix string, paths []string, cType string) {
 		}
 	case "63":
 		if len(choices) > 1 {
-			for choice := range choices {
+			for choice, children := range choices {
+				if children {
+					choice += "/"
+				}
 				fmt.Println(choice)
 			}
 		}
