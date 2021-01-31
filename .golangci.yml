@@ -7,29 +7,27 @@ issues:
   # disable some excludes that golangci-lint has by default. see https://github.com/golangci/golangci-lint
   exclude-use-default: false
   exclude-rules:
-      # This project does not have a rule to avoid unkeyed fields
-      - linters:
-          - govet
-        text: composite literal uses unkeyed fields
-      # Disable duplicate code, constant strings, unused params validation in testing
-      - path: _test\.go$
-        linters:
-          - goconst
-          - unparam
-      # These checks are not really useful
-      - linters:
-          - errcheck
-        text: "Error return value of `.*(Close|Remove)` is not checked"
-      # This project does not have a rule to have a doc comment for all packages
-      - linters:
-          - stylecheck
-        text: "at least one file in a package should have a package comment"
+    # This project does not have a rule to avoid unkeyed fields
+    - linters:
+        - govet
+      text: composite literal uses unkeyed fields
+    # Disable duplicate code, constant strings, unused params validation in testing
+    - path: _test\.go$
+      linters:
+        - goconst
+        - unparam
+    # These checks are not really useful
+    - linters:
+        - errcheck
+      text: "Error return value of `.*(Close|Remove)` is not checked"
+    # This project does not have a rule to have a doc comment for all packages
+    - linters:
+        - stylecheck
+      text: "at least one file in a package should have a package comment"
 
 linters:
   enable-all: true
   disable:
-    # The following checks are disabled as Tectonic project does not have
-    # corresponding rules:
     - gochecknoglobals # this project does not have a rule to have no globals
     - gochecknoinits   # this project does not have a rule to have no inits
     - lll              # this project does not have a maximum line length
@@ -59,6 +57,15 @@ linters:
     # Temporarily disabled until all existing problems are fixed
     - exhaustive
     - noctx
+    - nlreturn
+    - wrapcheck
+    - paralleltest
+    - thelper
+    - predeclared
+    - exhaustivestruct
+    - errorlint
+    - gci
+    - forbidigo
 
 linters-settings:
   nakedret:
