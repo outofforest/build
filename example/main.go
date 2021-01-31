@@ -14,19 +14,29 @@ import (
 // go run . aCmd/aaCmd
 // go run . aCmd/abCmd
 // go run . bCmd
+// go run . cCmd
 
 var commands = map[string]interface{}{
 	"aCmd":       commandA,
 	"aCmd/aaCmd": commandAA,
 	"aCmd/abCmd": commandAB,
 	"bCmd":       commandB,
+	"cCmd":       commandC,
 }
 
 func main() {
 	c := ioc.New()
-	c.Singleton(context.Background)
-
-	build.Do("ExampleApp", build.NewIoCExecutor(commands, c))
+	executor := build.NewIoCExecutor(commands, c)
+	if build.Autocomplete(executor) {
+		return
+	}
+	ctx := context.Background()
+	c.Singleton(func() context.Context {
+		return ctx
+	})
+	if err := build.Do(ctx, "ExampleApp", executor); err != nil {
+		fmt.Printf("Error: %s\n", err)
+	}
 }
 
 func commandA(ctx context.Context, deps build.DepsFunc) error {
@@ -46,7 +56,17 @@ func commandAB(ctx context.Context) error {
 	return nil
 }
 
-func commandB(ctx context.Context) error {
-	fmt.Println("B returning error")
+func commandB(ctx context.Context, deps build.DepsFunc) error {
+	deps(commandBB)
+	fmt.Println("B executed")
+	return nil
+}
+
+func commandBB(ctx context.Context) error {
+	fmt.Println("BB returning error")
 	return errors.New("test error")
+}
+
+func commandC(ctx context.Context) error {
+	panic("test panic")
 }

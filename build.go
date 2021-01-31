@@ -2,6 +2,7 @@ package build
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/wojciech-malota-wojcik/ioc"
 )
+
+const maxStack = 100
 
 // CommandFunc represents executable command
 type CommandFunc func(ctx context.Context) error
@@ -23,7 +26,7 @@ type Executor interface {
 	Paths() []string
 
 	// Execute executes commands by their paths
-	Execute(paths []string)
+	Execute(ctx context.Context, paths []string) error
 }
 
 // NewIoCExecutor returns new executor using IoC container to resolve parameters of commands
@@ -44,48 +47,107 @@ func (e *iocExecutor) Paths() []string {
 	return paths
 }
 
-func (e *iocExecutor) Execute(paths []string) {
+func (e *iocExecutor) Execute(ctx context.Context, paths []string) error {
 	executed := map[reflect.Value]bool{}
-	stack := make([]reflect.Value, 0, 10)
-
+	stack := map[reflect.Value]bool{}
 	c := e.c.SubContainer()
-	c.Singleton(func() DepsFunc {
-		return func(deps ...interface{}) {
-			for _, cmd := range deps {
-				e.execute(c, cmd, executed, &stack)
+
+	errReturn := errors.New("return")
+	errChan := make(chan error, 1)
+	worker := func(queue <-chan interface{}, done chan<- struct{}) {
+		defer close(done)
+		defer func() {
+			if r := recover(); r != nil {
+				var err error
+				if err2, ok := r.(error); ok {
+					if err2 == errReturn {
+						return
+					}
+					err = err2
+				} else {
+					err = fmt.Errorf("command panicked: %v", r)
+				}
+				errChan <- err
+				close(errChan)
+			}
+		}()
+		for {
+			select {
+			case <-ctx.Done():
+				errChan <- ctx.Err()
+				close(errChan)
+				return
+			case cmd, ok := <-queue:
+				if !ok {
+					return
+				}
+				cmdValue := reflect.ValueOf(cmd)
+				if executed[cmdValue] {
+					return
+				}
+				var err error
+				switch {
+				case stack[cmdValue]:
+					err = errors.New("build: dependency cycle detected")
+				case len(stack) >= maxStack:
+					err = errors.New("build: maximum length of stack reached")
+				default:
+					stack[cmdValue] = true
+					c.Call(cmd, &err)
+					delete(stack, cmdValue)
+					executed[cmdValue] = true
+				}
+				if err != nil {
+					errChan <- err
+					close(errChan)
+					return
+				}
 			}
 		}
+	}
+	depsFunc := func(deps ...interface{}) {
+		queue := make(chan interface{})
+		done := make(chan struct{})
+		go worker(queue, done)
+		for _, d := range deps {
+			select {
+			case <-done:
+				break
+			case queue <- d:
+			}
+		}
+		close(queue)
+		<-done
+		if len(errChan) > 0 {
+			panic(errReturn)
+		}
+	}
+	c.Singleton(func() DepsFunc {
+		return depsFunc
 	})
 
+	initDeps := make([]interface{}, 0, len(paths))
 	for _, p := range paths {
 		if e.commands[p] == nil {
-			panic(fmt.Sprintf("command %s does not exist", p))
+			return fmt.Errorf("build: command %s does not exist", p)
 		}
-		e.execute(c, e.commands[p], executed, &stack)
+		initDeps = append(initDeps, e.commands[p])
 	}
-}
-
-func (e *iocExecutor) execute(c *ioc.Container, cmd interface{}, executed map[reflect.Value]bool, stack *[]reflect.Value) {
-	cmdValue := reflect.ValueOf(cmd)
-	if executed[cmdValue] {
-		return
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				if err, ok := r.(error); ok && err == errReturn {
+					return
+				}
+				panic(r)
+			}
+		}()
+		depsFunc(initDeps...)
+	}()
+	if len(errChan) > 0 {
+		return <-errChan
 	}
-	for _, s := range *stack {
-		if s == cmdValue {
-			panic("dependency cycle")
-		}
-	}
-
-	*stack = append(*stack, cmdValue)
-
-	var err error
-	c.Call(cmd, &err)
-	if err != nil {
-		panic(err)
-	}
-
-	*stack = (*stack)[:len(*stack)-1]
-	executed[cmdValue] = true
+	return nil
 }
 
 const help = `Build environment for %[1]s
@@ -93,22 +155,28 @@ Put this to your .bashrc for autocompletion:
 complete -o nospace -C %[2]s %[2]s
 `
 
-// Do receives configuration and runs commands
-func Do(name string, resolver Executor) {
+// Autocomplete serves bash autocomplete functionality.
+// Returns true if autocomplete was requested and false otherwise.
+func Autocomplete(executor Executor) bool {
 	if prefix, ok := autocompletePrefix(os.Args[0], os.Getenv("COMP_LINE"), os.Getenv("COMP_POINT")); ok {
-		autocompleteDo(prefix, resolver.Paths(), os.Getenv("COMP_TYPE"))
-		return
+		autocompleteDo(prefix, executor.Paths(), os.Getenv("COMP_TYPE"))
+		return true
 	}
-	if len(os.Args) == 1 {
-		if _, err := fmt.Fprintf(os.Stderr, help, name, os.Args[0]); err != nil {
-			panic(err)
-		}
-		return
-	}
-	execute(os.Args[1:], resolver)
+	return false
 }
 
-func execute(paths []string, resolver Executor) {
+// Do receives configuration and runs commands
+func Do(ctx context.Context, name string, executor Executor) error {
+	if len(os.Args) == 1 {
+		if _, err := fmt.Fprintf(os.Stderr, help, name, os.Args[0]); err != nil {
+			return err
+		}
+		return nil
+	}
+	return execute(ctx, os.Args[1:], executor)
+}
+
+func execute(ctx context.Context, paths []string, executor Executor) error {
 	pathsTrimmed := make([]string, 0, len(paths))
 	for _, p := range paths {
 		if p[len(p)-1] == '/' {
@@ -116,7 +184,7 @@ func execute(paths []string, resolver Executor) {
 		}
 		pathsTrimmed = append(pathsTrimmed, p)
 	}
-	resolver.Execute(pathsTrimmed)
+	return executor.Execute(ctx, pathsTrimmed)
 }
 
 func autocompletePrefix(exeName string, cLine, cPoint string) (string, bool) {
