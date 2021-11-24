@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/wojciech-malota-wojcik/build"
-	"github.com/wojciech-malota-wojcik/ioc"
+	"github.com/wojciech-malota-wojcik/ioc/v2"
 )
 
 // Try running:
