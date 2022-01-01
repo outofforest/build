@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/wojciech-malota-wojcik/ioc/v2"
+	"github.com/outofforest/ioc/v2"
 )
 
 const maxStack = 100

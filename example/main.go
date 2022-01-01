@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/wojciech-malota-wojcik/build"
-	"github.com/wojciech-malota-wojcik/ioc/v2"
+	"github.com/outofforest/build"
+	"github.com/outofforest/ioc/v2"
 )
 
 // Try running:
