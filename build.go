@@ -5,11 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"reflect"
 	"strconv"
 	"strings"
 
 	"github.com/outofforest/ioc/v2"
+	"github.com/outofforest/libexec"
+	"github.com/ridge/must"
 )
 
 const maxStack = 100
@@ -170,13 +173,37 @@ func Autocomplete(executor Executor) bool {
 
 // Do receives configuration and runs commands
 func Do(ctx context.Context, name string, executor Executor) error {
+	ctx = withName(ctx, name)
+	setPath(ctx)
 	if len(os.Args) == 1 {
-		if _, err := fmt.Fprintf(os.Stderr, help, name, os.Args[0]); err != nil {
-			return err
-		}
-		return nil
+		return activate(ctx, name)
 	}
 	return execute(ctx, name, os.Args[1:], executor)
+}
+
+func setPath(ctx context.Context) {
+	binDir := binDir(ctx)
+	var path string
+	for _, p := range strings.Split(os.Getenv("PATH"), ":") {
+		if !strings.HasPrefix(p, binDir) {
+			if path != "" {
+				path += ":"
+			}
+			path += p
+		}
+	}
+	must.OK(os.Setenv("PATH", binDir+":"+path))
+}
+
+func activate(ctx context.Context, name string) error {
+	bash := exec.Command("bash", "--rcfile", "/etc/bashrc")
+	bash.Env = append(os.Environ(),
+		fmt.Sprintf("PS1=%s", "("+name+`) [\u@\h \W]\$ `),
+	)
+	bash.Stdin = os.Stdin
+	bash.Stdout = os.Stdout
+	bash.Stderr = os.Stderr
+	return libexec.Exec(ctx, bash)
 }
 
 func execute(ctx context.Context, name string, paths []string, executor Executor) error {
