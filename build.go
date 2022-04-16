@@ -173,7 +173,7 @@ func Do(ctx context.Context, name string, executor Executor) error {
 		}
 		return nil
 	}
-	return execute(ctx, os.Args[1:], executor)
+	return execute(withName(ctx, name), os.Args[1:], executor)
 }
 
 func execute(ctx context.Context, paths []string, executor Executor) error {
