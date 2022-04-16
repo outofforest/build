@@ -26,7 +26,7 @@ type Executor interface {
 	Paths() []string
 
 	// Execute executes commands by their paths
-	Execute(ctx context.Context, paths []string) error
+	Execute(ctx context.Context, name string, paths []string) error
 }
 
 // NewIoCExecutor returns new executor using IoC container to resolve parameters of commands
@@ -47,10 +47,13 @@ func (e *iocExecutor) Paths() []string {
 	return paths
 }
 
-func (e *iocExecutor) Execute(ctx context.Context, paths []string) error {
+func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) error {
 	executed := map[reflect.Value]bool{}
 	stack := map[reflect.Value]bool{}
 	c := e.c.SubContainer()
+	c.Singleton(func() context.Context {
+		return withName(ctx, name)
+	})
 
 	errReturn := errors.New("return")
 	errChan := make(chan error, 1)
@@ -173,10 +176,10 @@ func Do(ctx context.Context, name string, executor Executor) error {
 		}
 		return nil
 	}
-	return execute(withName(ctx, name), os.Args[1:], executor)
+	return execute(ctx, name, os.Args[1:], executor)
 }
 
-func execute(ctx context.Context, paths []string, executor Executor) error {
+func execute(ctx context.Context, name string, paths []string, executor Executor) error {
 	pathsTrimmed := make([]string, 0, len(paths))
 	for _, p := range paths {
 		if p[len(p)-1] == '/' {
@@ -184,7 +187,7 @@ func execute(ctx context.Context, paths []string, executor Executor) error {
 		}
 		pathsTrimmed = append(pathsTrimmed, p)
 	}
-	return executor.Execute(ctx, pathsTrimmed)
+	return executor.Execute(ctx, name, pathsTrimmed)
 }
 
 func autocompletePrefix(exeName string, cLine, cPoint string) (string, bool) {
