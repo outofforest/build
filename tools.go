@@ -41,15 +41,15 @@ type Tool struct {
 }
 
 // InstallTools installs tools
-func InstallTools(tools []Tool, deps DepsFunc) {
-	toolFns := make([]interface{}, 0, len(tools))
-	for _, tool := range tools {
-		tool := tool
-		toolFns = append(toolFns, func(ctx context.Context) error {
-			return EnsureTool(ctx, tool)
-		})
+func InstallTools(ctx context.Context, tools ...map[string]Tool) error {
+	for _, t1 := range tools {
+		for _, t2 := range t1 {
+			if err := EnsureTool(ctx, t2); err != nil {
+				return err
+			}
+		}
 	}
-	deps(toolFns...)
+	return nil
 }
 
 // EnsureTool ensures that tool exists, if not it is installed
