@@ -10,6 +10,8 @@ github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/outofforest/ioc/v2 v2.5.0 h1:adaOwJrk8IzlauIfe41SG7PNHK23dBQhrpAR5ho7m3E=
 github.com/outofforest/ioc/v2 v2.5.0/go.mod h1:7dAov+lZ7RbJ2TCy/IiK6+bicPmWZspga0P+exKudNE=
+github.com/outofforest/libexec v0.2.1 h1:x1Cfk88do1teCrgNxOotjWBpLGMtvmInNsvsJpP/P44=
+github.com/outofforest/libexec v0.2.1/go.mod h1:G3vH3SymR+QiJLfT3L4EnTqtrilFEukqnTE0JDbO/5Q=
 github.com/outofforest/logger v0.2.0 h1:mBUGPTu/nZjw81Qi/xspF0mdxzMEYl7ytANgNNixXgA=
 github.com/outofforest/logger v0.2.0/go.mod h1:01cg+cIodmNhDh3tHk/eGKTAxbQIwcGM3Apo46ebWAs=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
@@ -18,6 +20,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/ridge/must v0.6.0 h1:INravc0/PCJjZgfNADzGOS8/ubNykJYmyJshuz6uiCg=
 github.com/ridge/must v0.6.0/go.mod h1:dm1IMngycGzvmpsFY1A5TU18Y5Yg6MgtkJ0iJbca0VA=
+github.com/ridge/parallel v0.1.1 h1:tcZqjzWHJLOCMPGEQ9vaMHV/k4K8dZZ/oYz14qRgzfU=
+github.com/ridge/parallel v0.1.1/go.mod h1:RuwcKVeJYrUFcmydQtOAw8S9zE8p9UhrEjsGMYl5sfU=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=

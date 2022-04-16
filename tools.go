@@ -20,8 +20,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const binDir = "bin"
-
 // Tool represents the tool to be required by the build system
 type Tool struct {
 	// Name is the name of the tool
@@ -54,6 +52,7 @@ func InstallTools(ctx context.Context, tools ...map[string]Tool) error {
 
 // EnsureTool ensures that tool exists, if not it is installed
 func EnsureTool(ctx context.Context, tool Tool) error {
+	binDir := binDir(ctx)
 	toolDir := toolDir(ctx, tool)
 	for _, bin := range tool.Binaries {
 		srcPath, err := filepath.Abs(toolDir + "/" + bin)
@@ -82,8 +81,9 @@ func EnsureTool(ctx context.Context, tool Tool) error {
 }
 
 func install(ctx context.Context, tool Tool) (retErr error) {
+	toolDir := toolDir(ctx, tool)
 	ctx = logger.With(ctx, zap.String("name", tool.Name), zap.String("version", tool.Version),
-		zap.String("url", tool.URL))
+		zap.String("url", tool.URL), zap.String("path", toolDir))
 	log := logger.Get(ctx)
 	log.Info("Installing tool")
 
@@ -95,11 +95,10 @@ func install(ctx context.Context, tool Tool) (retErr error) {
 
 	hasher, expectedChecksum := hasher(tool.Hash)
 	reader := io.TeeReader(resp.Body, hasher)
-	toolDir := toolDir(ctx, tool)
 	if err := os.RemoveAll(toolDir); err != nil && !os.IsNotExist(err) {
 		panic(err)
 	}
-	if err := os.MkdirAll(toolDir, 0o700); err != nil {
+	if err := os.MkdirAll(toolDir, 0o755); err != nil {
 		panic(err)
 	}
 	defer func() {
@@ -118,6 +117,10 @@ func install(ctx context.Context, tool Tool) (retErr error) {
 			expectedChecksum, actualChecksum, tool.URL)
 	}
 
+	binDir := binDir(ctx)
+	if err := os.MkdirAll(binDir, 0o755); err != nil && !os.IsExist(err) {
+		return err
+	}
 	for _, bin := range tool.Binaries {
 		srcPath := toolDir + "/" + bin
 		dstPath := binDir + "/" + filepath.Base(bin)
@@ -230,8 +233,16 @@ func untar(reader io.Reader, path string) error {
 	}
 }
 
+func envDir(ctx context.Context) string {
+	return must.String(os.UserCacheDir()) + "/" + GetName(ctx)
+}
+
+func binDir(ctx context.Context) string {
+	return envDir(ctx) + "/bin"
+}
+
 func toolDir(ctx context.Context, tool Tool) string {
-	return must.String(os.UserCacheDir()) + "/" + GetName(ctx) + "/" + tool.Name + "-" + tool.Version
+	return envDir(ctx) + "/" + tool.Name + "-" + tool.Version
 }
 
 func ensureDir(file string) error {
