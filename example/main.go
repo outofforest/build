@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/outofforest/build"
 	"github.com/outofforest/ioc/v2"
+
+	"github.com/outofforest/build"
 )
 
 // Try running:
@@ -27,14 +28,11 @@ var commands = map[string]interface{}{
 func main() {
 	c := ioc.New()
 	executor := build.NewIoCExecutor(commands, c)
-	if build.Autocomplete(executor) {
-		return
-	}
 	ctx := context.Background()
 	c.Singleton(func() context.Context {
 		return ctx
 	})
-	if err := build.Do(ctx, "ExampleApp", executor); err != nil {
+	if err := build.Do(ctx, "env-name", executor); err != nil {
 		fmt.Printf("Error: %s\n", err)
 	}
 }
