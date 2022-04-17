@@ -157,29 +157,29 @@ func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) 
 	return nil
 }
 
-const help = `Build environment for %[1]s
-Put this to your .bashrc for autocompletion:
-complete -o nospace -C %[2]s %[2]s
-`
-
-// Autocomplete serves bash autocomplete functionality.
-// Returns true if autocomplete was requested and false otherwise.
-func Autocomplete(executor Executor) bool {
-	if prefix, ok := autocompletePrefix(os.Args[0], os.Getenv("COMP_LINE"), os.Getenv("COMP_POINT")); ok {
-		autocompleteDo(prefix, executor.Paths(), os.Getenv("COMP_TYPE"))
-		return true
-	}
-	return false
-}
-
 // Do receives configuration and runs commands
 func Do(ctx context.Context, name string, executor Executor) error {
+	if autocomplete(executor) {
+		return nil
+	}
+
 	ctx = withName(ctx, name)
+	changeWorkingDir()
 	setPath(ctx)
 	if len(os.Args) == 1 {
 		return activate(ctx, name)
 	}
 	return execute(ctx, name, os.Args[1:], executor)
+}
+
+// Autocomplete serves bash autocomplete functionality.
+// Returns true if autocomplete was requested and false otherwise.
+func autocomplete(executor Executor) bool {
+	if prefix, ok := autocompletePrefix(os.Args[0], os.Getenv("COMP_LINE"), os.Getenv("COMP_POINT")); ok {
+		autocompleteDo(prefix, executor.Paths(), os.Getenv("COMP_TYPE"))
+		return true
+	}
+	return false
 }
 
 func setPath(ctx context.Context) {
@@ -312,4 +312,8 @@ func longestPrefix(choices map[string]bool) string {
 		prefix += string(ch)
 	}
 	return prefix
+}
+
+func changeWorkingDir() {
+	must.OK(os.Chdir(filepath.Dir(filepath.Dir(must.String(filepath.EvalSymlinks(must.String(os.Executable())))))))
 }
