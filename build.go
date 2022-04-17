@@ -165,7 +165,7 @@ func Do(ctx context.Context, name string, executor Executor) error {
 
 	ctx = withName(ctx, name)
 	changeWorkingDir()
-	setPath(ctx)
+	setPath()
 	if len(os.Args) == 1 {
 		return activate(ctx, name)
 	}
@@ -182,25 +182,18 @@ func autocomplete(executor Executor) bool {
 	return false
 }
 
-func setPath(ctx context.Context) {
-	globalBinDir := binDir(ctx)
-	localBinDir, err := filepath.Abs("./bin")
-	if err != nil {
-		localBinDir = ""
-	}
+func setPath() {
+	binDir := binDir()
 	var path string
 	for _, p := range strings.Split(os.Getenv("PATH"), ":") {
-		if !strings.HasPrefix(p, globalBinDir) && (localBinDir == "" || !strings.HasPrefix(p, localBinDir)) {
+		if !strings.HasPrefix(p, binDir) {
 			if path != "" {
 				path += ":"
 			}
 			path += p
 		}
 	}
-	if localBinDir != "" {
-		path = localBinDir + ":" + path
-	}
-	must.OK(os.Setenv("PATH", globalBinDir+":"+path))
+	must.OK(os.Setenv("PATH", binToolsDir()+":"+binDir+":"+path))
 }
 
 func activate(ctx context.Context, name string) error {
