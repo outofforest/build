@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -182,21 +183,28 @@ func Do(ctx context.Context, name string, executor Executor) error {
 }
 
 func setPath(ctx context.Context) {
-	binDir := binDir(ctx)
+	globalBinDir := binDir(ctx)
+	localBinDir, err := filepath.Abs("./bin")
+	if err != nil {
+		localBinDir = ""
+	}
 	var path string
 	for _, p := range strings.Split(os.Getenv("PATH"), ":") {
-		if !strings.HasPrefix(p, binDir) {
+		if !strings.HasPrefix(p, globalBinDir) && (localBinDir == "" || !strings.HasPrefix(p, localBinDir)) {
 			if path != "" {
 				path += ":"
 			}
 			path += p
 		}
 	}
-	must.OK(os.Setenv("PATH", binDir+":"+path))
+	if localBinDir != "" {
+		path = localBinDir + ":" + path
+	}
+	must.OK(os.Setenv("PATH", globalBinDir+":"+path))
 }
 
 func activate(ctx context.Context, name string) error {
-	bash := exec.Command("bash", "--rcfile", "/etc/bashrc")
+	bash := exec.Command("bash")
 	bash.Env = append(os.Environ(),
 		fmt.Sprintf("PS1=%s", "("+name+`) [\u@\h \W]\$ `),
 	)
