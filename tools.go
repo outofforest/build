@@ -52,7 +52,7 @@ func InstallTools(ctx context.Context, tools ...map[string]Tool) error {
 
 // EnsureTool ensures that tool exists, if not it is installed
 func EnsureTool(ctx context.Context, tool Tool) error {
-	binDir := binDir(ctx)
+	binToolsDir := binToolsDir()
 	toolDir := toolDir(ctx, tool)
 	for _, bin := range tool.Binaries {
 		srcPath, err := filepath.Abs(toolDir + "/" + bin)
@@ -61,7 +61,7 @@ func EnsureTool(ctx context.Context, tool Tool) error {
 		}
 
 		binName := filepath.Base(bin)
-		dstPath, err := filepath.Abs(binDir + "/" + binName)
+		dstPath, err := filepath.Abs(binToolsDir + "/" + binName)
 		if err != nil {
 			return install(ctx, tool)
 		}
@@ -73,8 +73,7 @@ func EnsureTool(ctx context.Context, tool Tool) error {
 
 		binPath, err := exec.LookPath(binName)
 		if err != nil || binPath != dstPath {
-			return fmt.Errorf("binary %s can't be resolved from PATH, add %s to your PATH",
-				binName, must.String(filepath.Abs(binDir)))
+			return fmt.Errorf("binary %s can't be resolved from PATH, add %s to your PATH", binName, binToolsDir)
 		}
 	}
 	return nil
@@ -117,13 +116,10 @@ func install(ctx context.Context, tool Tool) (retErr error) {
 			expectedChecksum, actualChecksum, tool.URL)
 	}
 
-	binDir := binDir(ctx)
-	if err := os.MkdirAll(binDir, 0o755); err != nil && !os.IsExist(err) {
-		return err
-	}
+	binToolsDir := binToolsDir()
 	for _, bin := range tool.Binaries {
 		srcPath := toolDir + "/" + bin
-		dstPath := binDir + "/" + filepath.Base(bin)
+		dstPath := binToolsDir + "/" + filepath.Base(bin)
 		if err := os.Remove(dstPath); err != nil && !os.IsNotExist(err) {
 			panic(err)
 		}
@@ -237,8 +233,19 @@ func envDir(ctx context.Context) string {
 	return must.String(os.UserCacheDir()) + "/" + GetName(ctx)
 }
 
-func binDir(ctx context.Context) string {
-	return envDir(ctx) + "/bin"
+func binDir() string {
+	if err := os.MkdirAll("./bin", 0o755); err != nil && !os.IsExist(err) {
+		panic(err)
+	}
+	return must.String(filepath.Abs("./bin"))
+}
+
+func binToolsDir() string {
+	binToolsDir := binDir() + "/tools"
+	if err := os.Mkdir(binToolsDir, 0o755); err != nil && !os.IsExist(err) {
+		panic(err)
+	}
+	return binToolsDir
 }
 
 func toolDir(ctx context.Context, tool Tool) string {
