@@ -20,7 +20,7 @@ jobs:
         name: Extract tag name
         id: tag
         with:
-          script: return context.ref.replace(/\/refs\/tags\//, '');
+          script: return context.ref.replace(/refs\/tags\//, '');
       - uses: outofforest/rpmbuild@main
         name: Build RPM
         id: rpm
