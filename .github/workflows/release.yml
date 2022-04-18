@@ -1,0 +1,32 @@
+name: release
+
+on:
+  release:
+    types: [created]
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+      - uses: actions/github-script@0.2.0
+        name: Extract tag name
+        id: tag
+        with:
+          script: return context.payload.ref.replace(/\/refs\/tags\//, '');
+      - uses: outofforest/rpmbuild@main
+        name: Build RPM
+        id: rpm
+        with:
+          spec_file: ./build.spec
+          version: ${{ steps.tag.outputs.result }}
+          out_dir: ./release
+      - run: echo ${{ steps.rpm.outputs.rpm_path }}
+        name: Print RPM path

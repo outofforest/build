@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+
+DIR="$1"
+
+if [ "$DIR" == "" ]; then
+  echo "Error: provide project directory"
+  exit 1
+fi
+
+shift;
+
+cd "$DIR" || exit
+
+OUT="./bin/tmp-build"
+go build -o "$OUT" ./cmd
+exec "$OUT" "$@"
