@@ -11,7 +11,6 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
         with:
@@ -29,5 +28,9 @@ jobs:
           spec_file: ./build.spec
           version: ${{ steps.tag.outputs.result }}
           out_dir: ./release
-      - run: echo ${{ steps.rpm.outputs.rpm_path }}
-        name: Print RPM path
+      - uses: svenstaro/upload-release-action@v2
+        name: Upload binaries to release
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref }}
+          file: ${{ steps.rpm.outputs.rpm_path }}
