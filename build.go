@@ -90,7 +90,7 @@ func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) 
 				}
 				cmdValue := reflect.ValueOf(cmd)
 				if executed[cmdValue] {
-					return
+					continue
 				}
 				var err error
 				switch {
