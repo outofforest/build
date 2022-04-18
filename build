@@ -10,8 +10,8 @@ fi
 
 shift;
 
-cd "$DIR" || exit
+cd "$DIR/build" || exit
 
-OUT="./bin/tmp-build"
-go build -o "$OUT" ./build/cmd
+OUT="../bin/tmp-build"
+go build -o "$OUT" ./cmd
 exec "$OUT" "$@"
