@@ -204,7 +204,11 @@ func activate(ctx context.Context, name string) error {
 	bash.Stdin = os.Stdin
 	bash.Stdout = os.Stdout
 	bash.Stderr = os.Stderr
-	return libexec.Exec(ctx, bash)
+	err := libexec.Exec(ctx, bash)
+	if bash.ProcessState != nil && bash.ProcessState.ExitCode() != 0 {
+		return nil
+	}
+	return err
 }
 
 func execute(ctx context.Context, name string, paths []string, executor Executor) error {
