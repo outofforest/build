@@ -2,7 +2,7 @@
 
 Yet another implementation of Makefile concept in go.
 Advantages over all the other available packages:
-- go only, compile and commit to your repo
+- go only, except really small bash script
 - no magic command discovery based on go source code, you explicitly
   declare paths and functions for your commands
 - bash autocompletion supported
@@ -13,15 +13,27 @@ Advantages over all the other available packages:
 
 Take a look at [example/main.go](../main/example/main.go)
   
-## First compilation
+## Compilation
 
 This build system is written in pure go so you have to compile it 
-using `go build` before first usage. You may write little bash wrapper which compiles
-`build` if binary doesn't exist or do it manually once and commit to your repo (not recommended).
+using `go build` before first usage. Take a look at the [script](./build) I use in my setup.
 
-Taking this into consideration one of the commands available in this executable
-should be responsible for compiling `build` itself so you don't need to use `go build`
-later on when `build` is modified.
+I configure this script using `alias` feature delivered by `bash` in my `~/.bashrc`:
+
+```
+alias projname="outofforest-build <path-to-project>"
+```
+
+`outofforest-build` is [this script](./build).
+Each release delivers rpm package for compatible distros, installing it in your system.
+
+Then I may call:
+
+```
+$ projname <command> <command>
+```
+
+to execute commands.
 
 ## Autocompletion
 
@@ -29,15 +41,10 @@ later on when `build` is modified.
 your `~/.bashrc`:
 
 ```
-complete -o nospace -C <path-to-your-build-binary> <alias-used-to-run-build>
+complete -o nospace -C projname projname
 ```
 
-Assuming your build executable file is named `build` and is available in your `PATH`
-the exact `complete` is this:
-
-```
-complete -o nospace -C build build
-```
+assuming you defined `projname` alias specified above.
 
 ## Executing commands
 
@@ -45,16 +52,16 @@ Commands are organised in paths similar to the one in normal filesystem.
 Some examples how commands may be structured:
 
 ```
-build tools/apiClient
-build deploy/db
-build tests/backend/web-server
-build lint
+projname tools/apiClient
+projname deploy/db
+projname tests/backend/web-server
+projname lint
 ```
 
 You may specify many commands at once:
 
 ```
-build tests deploy
+projname tests deploy
 ```
 
 They are executed in specified order. This will save some time if both commands execute same dependencies.
@@ -70,8 +77,28 @@ Dependencies are executed one by one in order.
 
 If circular dependency is detected error is raised.
 
+## Other features
+
+### List of commands
+
+Execute
+
+```
+$ projname @
+```
+
+to print available commands with their descriptions.
+
+### Verbose logging
+
+If you want to see more logs during command execution, use `-v` or `--verbose`:
+
+```
+$ projname <command> -v
+```
+
 ## Errors
 
-`build` always panics on first failure.
+`build` always breaks on first failure.
 
 

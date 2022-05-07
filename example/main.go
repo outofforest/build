@@ -5,36 +5,27 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/outofforest/ioc/v2"
-
 	"github.com/outofforest/build"
 )
 
 // Try running:
+// go run . @
 // go run . aCmd
 // go run . aCmd/aaCmd
 // go run . aCmd/abCmd
 // go run . bCmd
 // go run . cCmd
 
-var commands = map[string]interface{}{
-	"aCmd":       commandA,
-	"aCmd/aaCmd": commandAA,
-	"aCmd/abCmd": commandAB,
-	"bCmd":       commandB,
-	"cCmd":       commandC,
+var commands = map[string]build.Command{
+	"aCmd":       {Fn: commandA, Description: "This is commandA"},
+	"aCmd/aaCmd": {Fn: commandAA, Description: "This is commandAA"},
+	"aCmd/abCmd": {Fn: commandAB, Description: "This is commandAB"},
+	"bCmd":       {Fn: commandB, Description: "This is commandB"},
+	"cCmd":       {Fn: commandC, Description: "This is commandC"},
 }
 
 func main() {
-	c := ioc.New()
-	executor := build.NewIoCExecutor(commands, c)
-	ctx := context.Background()
-	c.Singleton(func() context.Context {
-		return ctx
-	})
-	if err := build.Main(ctx, "env-name", executor); err != nil {
-		fmt.Printf("Error: %s\n", err)
-	}
+	build.Main("env-name", nil, commands)
 }
 
 func commandA(ctx context.Context, deps build.DepsFunc) error {
