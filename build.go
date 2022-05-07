@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -21,37 +22,28 @@ import (
 
 const maxStack = 100
 
-// CommandFunc represents executable command
-type CommandFunc func(ctx context.Context) error
+type Command struct {
+	Description string
+	Fn          interface{}
+}
 
 // DepsFunc represents function for executing dependencies
 type DepsFunc func(deps ...interface{})
 
 // Executor defines interface of command executor
 type Executor interface {
-	// Paths lists all available command paths
-	Paths() []string
-
 	// Execute executes commands by their paths
 	Execute(ctx context.Context, name string, paths []string) error
 }
 
 // NewIoCExecutor returns new executor using IoC container to resolve parameters of commands
-func NewIoCExecutor(commands map[string]interface{}, c *ioc.Container) Executor {
+func NewIoCExecutor(commands map[string]Command, c *ioc.Container) Executor {
 	return &iocExecutor{c: c, commands: commands}
 }
 
 type iocExecutor struct {
 	c        *ioc.Container
-	commands map[string]interface{}
-}
-
-func (e *iocExecutor) Paths() []string {
-	paths := make([]string, 0, len(e.commands))
-	for path := range e.commands {
-		paths = append(paths, path)
-	}
-	return paths
+	commands map[string]Command
 }
 
 func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) error {
@@ -138,10 +130,11 @@ func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) 
 
 	initDeps := make([]interface{}, 0, len(paths))
 	for _, p := range paths {
-		if e.commands[p] == nil {
+		cmd, exists := e.commands[p]
+		if !exists {
 			return fmt.Errorf("build: command %s does not exist", p)
 		}
-		initDeps = append(initDeps, e.commands[p])
+		initDeps = append(initDeps, cmd.Fn)
 	}
 	func() {
 		defer func() {
@@ -161,7 +154,12 @@ func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) 
 }
 
 // Main receives configuration and runs commands
-func Main(name string, containerBuilder func(c *ioc.Container), commands map[string]interface{}) {
+func Main(name string, containerBuilder func(c *ioc.Container), commands map[string]Command) {
+	if len(os.Args) == 2 && os.Args[1] == "@" {
+		listCommands(commands)
+		return
+	}
+
 	var verbose bool
 	if !isAutocomplete() {
 		pflag.BoolVarP(&verbose, "verbose", "v", false, "Turns on verbose logging")
@@ -174,7 +172,7 @@ func Main(name string, containerBuilder func(c *ioc.Container), commands map[str
 	run.Tool("build", containerBuilder, func(ctx context.Context, c *ioc.Container) error {
 		executor := NewIoCExecutor(commands, c)
 		if isAutocomplete() {
-			autocompleteDo(executor)
+			autocompleteDo(commands)
 			return nil
 		}
 
@@ -191,6 +189,21 @@ func Main(name string, containerBuilder func(c *ioc.Container), commands map[str
 func isAutocomplete() bool {
 	_, ok := autocompletePrefix()
 	return ok
+}
+
+func listCommands(commands map[string]Command) {
+	paths := paths(commands)
+	var maxLen int
+	for _, path := range paths {
+		if len(path) > maxLen {
+			maxLen = len(path)
+		}
+	}
+	fmt.Println("\n Available commands:\n")
+	for _, path := range paths {
+		fmt.Printf(fmt.Sprintf(`   %%-%ds`, maxLen)+"  %s\n", path, commands[path].Description)
+	}
+	fmt.Println("")
 }
 
 func setPath() {
@@ -252,9 +265,9 @@ func autocompletePrefix() (string, bool) {
 	return prefix[lastSpace:], true
 }
 
-func autocompleteDo(executor Executor) {
+func autocompleteDo(commands map[string]Command) {
 	prefix, _ := autocompletePrefix()
-	choices := choicesForPrefix(executor.Paths(), prefix)
+	choices := choicesForPrefix(paths(commands), prefix)
 	switch os.Getenv("COMP_TYPE") {
 	case "9":
 		startPos := strings.LastIndex(prefix, "/") + 1
@@ -281,6 +294,15 @@ func autocompleteDo(executor Executor) {
 			}
 		}
 	}
+}
+
+func paths(commands map[string]Command) []string {
+	paths := make([]string, 0, len(commands))
+	for path := range commands {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+	return paths
 }
 
 func choicesForPrefix(paths []string, prefix string) map[string]bool {
