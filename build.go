@@ -13,7 +13,10 @@ import (
 
 	"github.com/outofforest/ioc/v2"
 	"github.com/outofforest/libexec"
+	"github.com/outofforest/logger"
+	"github.com/outofforest/run"
 	"github.com/ridge/must"
+	"github.com/spf13/pflag"
 )
 
 const maxStack = 100
@@ -157,29 +160,37 @@ func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) 
 	return nil
 }
 
-// Do receives configuration and runs commands
-func Do(ctx context.Context, name string, executor Executor) error {
-	if autocomplete(executor) {
-		return nil
+// Main receives configuration and runs commands
+func Main(name string, containerBuilder func(c *ioc.Container), commands map[string]interface{}) {
+	var verbose bool
+	if !isAutocomplete() {
+		pflag.BoolVarP(&verbose, "verbose", "v", false, "Turns on verbose logging")
+		pflag.Parse()
+	}
+	if !verbose {
+		logger.VerboseOff()
 	}
 
-	ctx = withName(ctx, name)
-	changeWorkingDir()
-	setPath()
-	if len(os.Args) == 1 {
-		return activate(ctx, name)
-	}
-	return execute(ctx, name, os.Args[1:], executor)
+	run.Tool("build", containerBuilder, func(ctx context.Context, c *ioc.Container) error {
+		executor := NewIoCExecutor(commands, c)
+		if isAutocomplete() {
+			autocompleteDo(executor)
+			return nil
+		}
+
+		ctx = withName(ctx, name)
+		changeWorkingDir()
+		setPath()
+		if len(os.Args) == 1 {
+			return activate(ctx, name)
+		}
+		return execute(ctx, name, pflag.Args(), executor)
+	})
 }
 
-// Autocomplete serves bash autocomplete functionality.
-// Returns true if autocomplete was requested and false otherwise.
-func autocomplete(executor Executor) bool {
-	if prefix, ok := autocompletePrefix(os.Args[0], os.Getenv("COMP_LINE"), os.Getenv("COMP_POINT")); ok {
-		autocompleteDo(prefix, executor.Paths(), os.Getenv("COMP_TYPE"))
-		return true
-	}
-	return false
+func isAutocomplete() bool {
+	_, ok := autocompletePrefix()
+	return ok
 }
 
 func setPath() {
@@ -222,7 +233,11 @@ func execute(ctx context.Context, name string, paths []string, executor Executor
 	return executor.Execute(ctx, name, pathsTrimmed)
 }
 
-func autocompletePrefix(exeName string, cLine, cPoint string) (string, bool) {
+func autocompletePrefix() (string, bool) {
+	exeName := os.Args[0]
+	cLine := os.Getenv("COMP_LINE")
+	cPoint := os.Getenv("COMP_POINT")
+
 	if cLine == "" || cPoint == "" {
 		return "", false
 	}
@@ -237,9 +252,10 @@ func autocompletePrefix(exeName string, cLine, cPoint string) (string, bool) {
 	return prefix[lastSpace:], true
 }
 
-func autocompleteDo(prefix string, paths []string, cType string) {
-	choices := choicesForPrefix(paths, prefix)
-	switch cType {
+func autocompleteDo(executor Executor) {
+	prefix, _ := autocompletePrefix()
+	choices := choicesForPrefix(executor.Paths(), prefix)
+	switch os.Getenv("COMP_TYPE") {
 	case "9":
 		startPos := strings.LastIndex(prefix, "/") + 1
 		prefix = prefix[:startPos]
