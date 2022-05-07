@@ -32,7 +32,7 @@ func main() {
 	c.Singleton(func() context.Context {
 		return ctx
 	})
-	if err := build.Do(ctx, "env-name", executor); err != nil {
+	if err := build.Main(ctx, "env-name", executor); err != nil {
 		fmt.Printf("Error: %s\n", err)
 	}
 }
