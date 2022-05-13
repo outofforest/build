@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/outofforest/ioc/v2 v2.5.0
-	github.com/outofforest/libexec v0.2.2
+	github.com/outofforest/libexec v0.3.0
 	github.com/outofforest/logger v0.2.0
 	github.com/outofforest/run v0.2.3
 	github.com/ridge/must v0.6.0
