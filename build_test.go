@@ -2,8 +2,9 @@ package build
 
 import (
 	"context"
-	"errors"
 	"testing"
+
+	"github.com/pkg/errors"
 
 	"github.com/outofforest/ioc/v2"
 	"github.com/stretchr/testify/assert"
@@ -58,15 +59,15 @@ func cmdF(ctx context.Context) error {
 	return ctx.Err()
 }
 
-var commands = map[string]interface{}{
-	"a":    cmdA,
-	"a/aa": cmdAA,
-	"a/ab": cmdAB,
-	"b":    cmdB,
-	"c":    cmdC,
-	"d":    cmdD,
-	"e":    cmdE,
-	"f":    cmdF,
+var commands = map[string]Command{
+	"a":    {Fn: cmdA},
+	"a/aa": {Fn: cmdAA},
+	"a/ab": {Fn: cmdAB},
+	"b":    {Fn: cmdB},
+	"c":    {Fn: cmdC},
+	"d":    {Fn: cmdD},
+	"e":    {Fn: cmdE},
+	"f":    {Fn: cmdF},
 }
 
 var tCtx = context.Background()
@@ -85,7 +86,7 @@ func setup(ctx context.Context) (Executor, report) {
 
 func TestRootCommand(t *testing.T) {
 	exe, r := setup(tCtx)
-	require.NoError(t, execute(tCtx, []string{"a"}, exe))
+	require.NoError(t, execute(tCtx, "test", []string{"a"}, exe))
 
 	assert.Len(t, r, 4)
 	assert.Equal(t, "ac", r[0])
@@ -96,7 +97,7 @@ func TestRootCommand(t *testing.T) {
 
 func TestChildCommand(t *testing.T) {
 	exe, r := setup(tCtx)
-	require.NoError(t, execute(tCtx, []string{"a/aa"}, exe))
+	require.NoError(t, execute(tCtx, "test", []string{"a/aa"}, exe))
 
 	assert.Len(t, r, 2)
 	assert.Equal(t, "ac", r[0])
@@ -105,7 +106,7 @@ func TestChildCommand(t *testing.T) {
 
 func TestTwoCommands(t *testing.T) {
 	exe, r := setup(tCtx)
-	require.NoError(t, execute(tCtx, []string{"a/aa", "a/ab"}, exe))
+	require.NoError(t, execute(tCtx, "test", []string{"a/aa", "a/ab"}, exe))
 
 	assert.Len(t, r, 3)
 	assert.Equal(t, "ac", r[0])
@@ -115,7 +116,7 @@ func TestTwoCommands(t *testing.T) {
 
 func TestCommandWithSlash(t *testing.T) {
 	exe, r := setup(tCtx)
-	require.NoError(t, execute(tCtx, []string{"a/aa/"}, exe))
+	require.NoError(t, execute(tCtx, "test", []string{"a/aa/"}, exe))
 
 	assert.Len(t, r, 2)
 	assert.Equal(t, "ac", r[0])
@@ -124,7 +125,7 @@ func TestCommandWithSlash(t *testing.T) {
 
 func TestCommandsAreExecutedOnce(t *testing.T) {
 	exe, r := setup(tCtx)
-	require.NoError(t, execute(tCtx, []string{"a", "a"}, exe))
+	require.NoError(t, execute(tCtx, "test", []string{"a", "a"}, exe))
 
 	assert.Len(t, r, 4)
 	assert.Equal(t, "ac", r[0])
@@ -135,33 +136,33 @@ func TestCommandsAreExecutedOnce(t *testing.T) {
 
 func TestCommandReturnsError(t *testing.T) {
 	exe, _ := setup(tCtx)
-	require.Error(t, execute(tCtx, []string{"b"}, exe))
+	require.Error(t, execute(tCtx, "test", []string{"b"}, exe))
 }
 
 func TestCommandPanics(t *testing.T) {
 	exe, _ := setup(tCtx)
-	require.Error(t, execute(tCtx, []string{"e"}, exe))
+	require.Error(t, execute(tCtx, "test", []string{"e"}, exe))
 }
 
 func TestErrorOnCyclicDependencies(t *testing.T) {
 	exe, _ := setup(tCtx)
-	require.Error(t, execute(tCtx, []string{"c"}, exe))
+	require.Error(t, execute(tCtx, "test", []string{"c"}, exe))
 }
 
 func TestRootCommandDoesNotExist(t *testing.T) {
 	exe, _ := setup(tCtx)
-	require.Error(t, execute(tCtx, []string{"z"}, exe))
+	require.Error(t, execute(tCtx, "test", []string{"z"}, exe))
 }
 
 func TestChildCommandDoesNotExist(t *testing.T) {
 	exe, _ := setup(tCtx)
-	require.Error(t, execute(tCtx, []string{"a/z"}, exe))
+	require.Error(t, execute(tCtx, "test", []string{"a/z"}, exe))
 }
 
 func TestCommandStopsOnCanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(tCtx)
 	cancel()
 	exe, _ := setup(ctx)
-	err := execute(ctx, []string{"f"}, exe)
+	err := execute(ctx, "test", []string{"f"}, exe)
 	assert.Equal(t, context.Canceled, err)
 }
