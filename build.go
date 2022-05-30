@@ -18,7 +18,6 @@ import (
 	"github.com/outofforest/logger"
 	"github.com/outofforest/run"
 	"github.com/ridge/must"
-	"github.com/spf13/pflag"
 )
 
 const maxStack = 100
@@ -158,7 +157,8 @@ func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) 
 // Main receives configuration and runs commands
 func Main(name string, containerBuilder func(c *ioc.Container), commands map[string]Command) {
 	run.Tool("build", containerBuilder, func(ctx context.Context, c *ioc.Container) error {
-		if err := logger.Flags(logger.ToolDefaultConfig, "build").Parse(os.Args[1:]); err != nil {
+		flags := logger.Flags(logger.ToolDefaultConfig, "build")
+		if err := flags.Parse(os.Args[1:]); err != nil {
 			return err
 		}
 
@@ -176,10 +176,10 @@ func Main(name string, containerBuilder func(c *ioc.Container), commands map[str
 		ctx = withName(ctx, name)
 		changeWorkingDir()
 		setPath()
-		if len(pflag.Args()) == 0 {
+		if len(flags.Args()) == 0 {
 			return activate(ctx, name)
 		}
-		return execute(ctx, name, pflag.Args(), executor)
+		return execute(ctx, name, flags.Args(), executor)
 	})
 }
 
