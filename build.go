@@ -2,7 +2,6 @@ package build
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,6 +10,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/outofforest/ioc/v2"
 	"github.com/outofforest/libexec"
@@ -67,7 +68,7 @@ func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) 
 					}
 					err = err2
 				} else {
-					err = fmt.Errorf("command panicked: %v", r)
+					err = errors.Errorf("command panicked: %v", r)
 				}
 				errChan <- err
 				close(errChan)
@@ -133,7 +134,7 @@ func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) 
 	for _, p := range paths {
 		cmd, exists := e.commands[p]
 		if !exists {
-			return fmt.Errorf("build: command %s does not exist", p)
+			return errors.Errorf("build: command %s does not exist", p)
 		}
 		initDeps = append(initDeps, cmd.Fn)
 	}
@@ -156,21 +157,16 @@ func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) 
 
 // Main receives configuration and runs commands
 func Main(name string, containerBuilder func(c *ioc.Container), commands map[string]Command) {
-	if len(os.Args) == 2 && os.Args[1] == "@" {
-		listCommands(commands)
-		return
-	}
-
-	var verbose bool
-	if !isAutocomplete() {
-		pflag.BoolVarP(&verbose, "verbose", "v", false, "Turns on verbose logging")
-		pflag.Parse()
-	}
-	if !verbose {
-		logger.VerboseOff()
-	}
-
 	run.Tool("build", containerBuilder, func(ctx context.Context, c *ioc.Container) error {
+		if err := logger.Flags(logger.ToolDefaultConfig, "build").Parse(os.Args[1:]); err != nil {
+			return err
+		}
+
+		if len(os.Args) >= 2 && os.Args[1] == "@" {
+			listCommands(commands)
+			return nil
+		}
+
 		executor := NewIoCExecutor(commands, c)
 		if isAutocomplete() {
 			autocompleteDo(commands)
@@ -180,7 +176,7 @@ func Main(name string, containerBuilder func(c *ioc.Container), commands map[str
 		ctx = withName(ctx, name)
 		changeWorkingDir()
 		setPath()
-		if len(os.Args) == 1 {
+		if len(pflag.Args()) == 0 {
 			return activate(ctx, name)
 		}
 		return execute(ctx, name, pflag.Args(), executor)
@@ -200,7 +196,8 @@ func listCommands(commands map[string]Command) {
 			maxLen = len(path)
 		}
 	}
-	fmt.Println("\n Available commands:\n")
+	fmt.Println("\n Available commands:")
+	fmt.Println()
 	for _, path := range paths {
 		fmt.Printf(fmt.Sprintf(`   %%-%ds`, maxLen)+"  %s\n", path, commands[path].Description)
 	}

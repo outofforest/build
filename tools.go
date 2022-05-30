@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -14,6 +13,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/outofforest/logger"
 	"github.com/ridge/must"
@@ -73,7 +74,7 @@ func EnsureTool(ctx context.Context, tool Tool) error {
 
 		binPath, err := exec.LookPath(binName)
 		if err != nil || binPath != dstPath {
-			return fmt.Errorf("binary %s can't be resolved from PATH, add %s to your PATH", binName, binToolsDir)
+			return errors.Errorf("binary %s can't be resolved from PATH, add %s to your PATH", binName, binToolsDir)
 		}
 	}
 	return nil
@@ -112,7 +113,7 @@ func install(ctx context.Context, tool Tool) (retErr error) {
 
 	actualChecksum := fmt.Sprintf("%02x", hasher.Sum(nil))
 	if actualChecksum != expectedChecksum {
-		return fmt.Errorf("checksum does not match for tool %s, expected: %s, actual: %s, url: %s", tool.Name,
+		return errors.Errorf("checksum does not match for tool %s, expected: %s, actual: %s, url: %s", tool.Name,
 			expectedChecksum, actualChecksum, tool.URL)
 	}
 
@@ -134,7 +135,7 @@ func install(ctx context.Context, tool Tool) (retErr error) {
 func hasher(hashStr string) (hash.Hash, string) {
 	parts := strings.SplitN(hashStr, ":", 2)
 	if len(parts) != 2 {
-		panic(fmt.Errorf("incorrect checksum format: %s", hashStr))
+		panic(errors.Errorf("incorrect checksum format: %s", hashStr))
 	}
 	hashAlgorithm := parts[0]
 	checksum := parts[1]
@@ -144,7 +145,7 @@ func hasher(hashStr string) (hash.Hash, string) {
 	case "sha256":
 		hasher = sha256.New()
 	default:
-		panic(fmt.Errorf("unsupported hashing algorithm: %s", hashAlgorithm))
+		panic(errors.Errorf("unsupported hashing algorithm: %s", hashAlgorithm))
 	}
 
 	return hasher, strings.ToLower(checksum)
@@ -160,7 +161,7 @@ func extract(url string, reader io.Reader, path string) error {
 		}
 		return untar(reader, path)
 	default:
-		panic(fmt.Errorf("unsupported compression algorithm for url: %s", url))
+		panic(errors.Errorf("unsupported compression algorithm for url: %s", url))
 	}
 }
 
@@ -224,7 +225,7 @@ func untar(reader io.Reader, path string) error {
 				return err
 			}
 		default:
-			return fmt.Errorf("unsupported file type: %d", header.Typeflag)
+			return errors.Errorf("unsupported file type: %d", header.Typeflag)
 		}
 	}
 }

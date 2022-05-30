@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
+
+	"github.com/pkg/errors"
 
 	"github.com/outofforest/build"
 )
