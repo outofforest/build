@@ -13,5 +13,5 @@ shift;
 cd "$DIR/build" || exit
 
 OUT="../bin/tmp-build"
-go build -o "$OUT" ./cmd
+go build -trimpath -o "$OUT" ./cmd
 exec "$OUT" "$@"
