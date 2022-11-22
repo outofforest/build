@@ -2,6 +2,8 @@ package build
 
 import (
 	"archive/tar"
+	"archive/zip"
+	"bytes"
 	"compress/gzip"
 	"context"
 	"crypto/sha256"
@@ -160,6 +162,8 @@ func extract(url string, reader io.Reader, path string) error {
 			return err
 		}
 		return untar(reader, path)
+	case strings.HasSuffix(url, ".zip"):
+		return unzip(reader, path)
 	default:
 		panic(errors.Errorf("unsupported compression algorithm for url: %s", url))
 	}
@@ -228,6 +232,57 @@ func untar(reader io.Reader, path string) error {
 			return errors.Errorf("unsupported file type: %d", header.Typeflag)
 		}
 	}
+}
+
+func unzip(reader io.Reader, path string) error {
+	// To unzip archive it is required to store it entirely on disk or in memory.
+	// Zip does not support unzipping from one-way reader.
+	// Here we store entire file in memory, so it's feasible only for small archives.
+	archive, err := io.ReadAll(reader)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	if err != nil {
+		panic(err)
+	}
+
+	for _, f := range zr.File {
+		filePath := filepath.Join(path, f.Name)
+		if f.FileInfo().IsDir() {
+			if err := os.MkdirAll(filePath, f.Mode()); err != nil {
+				return errors.WithStack(err)
+			}
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
+			return errors.WithStack(err)
+		}
+
+		err := func() error {
+			fileInArchive, err := f.Open()
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			defer fileInArchive.Close()
+
+			//nolint:nosnakecase // Imported constants
+			dstFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			defer dstFile.Close()
+
+			_, err = io.Copy(dstFile, fileInArchive)
+			return errors.WithStack(err)
+		}()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func envDir(ctx context.Context) string {
