@@ -107,7 +107,7 @@ func install(ctx context.Context, tool Tool) (retErr error) {
 		}
 	}()
 
-	if err := extract(tool.URL, reader, toolDir); err != nil {
+	if err := store(tool.URL, reader, toolDir); err != nil {
 		return err
 	}
 
@@ -151,7 +151,7 @@ func hasher(hashStr string) (hash.Hash, string) {
 	return hasher, strings.ToLower(checksum)
 }
 
-func extract(url string, reader io.Reader, path string) error {
+func store(url string, reader io.Reader, path string) error {
 	switch {
 	case strings.HasSuffix(url, ".tar.gz"):
 		var err error
@@ -161,7 +161,13 @@ func extract(url string, reader io.Reader, path string) error {
 		}
 		return untar(reader, path)
 	default:
-		panic(errors.Errorf("unsupported compression algorithm for url: %s", url))
+		f, err := os.OpenFile(filepath.Join(path, filepath.Base(url)), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o700)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		defer f.Close()
+		_, err = io.Copy(f, reader)
+		return errors.WithStack(err)
 	}
 }
 
