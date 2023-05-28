@@ -12,7 +12,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -38,7 +37,7 @@ type Tool struct {
 	Hash string
 
 	// Binaries is the list of relative paths to binaries to install in local bin folder
-	Binaries []string
+	Binaries map[string]string
 }
 
 // InstallTools installs tools
@@ -55,16 +54,15 @@ func InstallTools(ctx context.Context, tools ...map[string]Tool) error {
 
 // EnsureTool ensures that tool exists, if not it is installed
 func EnsureTool(ctx context.Context, tool Tool) error {
-	binToolsDir := binToolsDir()
+	binDir := binDir()
 	toolDir := toolDir(ctx, tool)
-	for _, bin := range tool.Binaries {
-		srcPath, err := filepath.Abs(toolDir + "/" + bin)
+	for dstBin, srcBin := range tool.Binaries {
+		srcPath, err := filepath.Abs(toolDir + "/" + srcBin)
 		if err != nil {
 			return install(ctx, tool)
 		}
 
-		binName := filepath.Base(bin)
-		dstPath, err := filepath.Abs(binToolsDir + "/" + binName)
+		dstPath, err := filepath.Abs(binDir + "/" + dstBin)
 		if err != nil {
 			return install(ctx, tool)
 		}
@@ -72,11 +70,6 @@ func EnsureTool(ctx context.Context, tool Tool) error {
 		realPath, err := filepath.EvalSymlinks(dstPath)
 		if err != nil || realPath != srcPath {
 			return install(ctx, tool)
-		}
-
-		binPath, err := exec.LookPath(binName)
-		if err != nil || binPath != dstPath {
-			return errors.Errorf("binary %s can't be resolved from PATH, add %s to your PATH", binName, binToolsDir)
 		}
 	}
 	return nil
@@ -119,13 +112,17 @@ func install(ctx context.Context, tool Tool) (retErr error) {
 			expectedChecksum, actualChecksum, tool.URL)
 	}
 
-	binToolsDir := binToolsDir()
-	for _, bin := range tool.Binaries {
-		srcPath := toolDir + "/" + bin
-		dstPath := binToolsDir + "/" + filepath.Base(bin)
+	binDir := binDir()
+	for dstBin, srcBin := range tool.Binaries {
+		srcPath := toolDir + "/" + srcBin
+		dstPath := binDir + "/" + dstBin
 		if err := os.Remove(dstPath); err != nil && !os.IsNotExist(err) {
 			panic(err)
 		}
+		if err := os.MkdirAll(filepath.Dir(dstPath), 0o700); err != nil && !os.IsExist(err) {
+			panic(err)
+		}
+
 		must.OK(os.Symlink(srcPath, dstPath))
 		must.Any(filepath.EvalSymlinks(dstPath))
 	}
@@ -300,14 +297,6 @@ func binDir() string {
 		panic(err)
 	}
 	return must.String(filepath.Abs("./bin"))
-}
-
-func binToolsDir() string {
-	binToolsDir := binDir() + "/tools"
-	if err := os.Mkdir(binToolsDir, 0o755); err != nil && !os.IsExist(err) {
-		panic(err)
-	}
-	return binToolsDir
 }
 
 func toolDir(ctx context.Context, tool Tool) string {
