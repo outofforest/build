@@ -215,7 +215,7 @@ func setPath() {
 			path += p
 		}
 	}
-	must.OK(os.Setenv("PATH", binToolsDir()+":"+binDir+":"+path))
+	must.OK(os.Setenv("PATH", binDir+"/tools:"+binDir+":"+path))
 }
 
 func activate(ctx context.Context, name string) error {
