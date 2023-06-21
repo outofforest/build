@@ -30,10 +30,13 @@ type Tool struct {
 	// Version is the version of the tool
 	Version string
 
+	// IsGlobal instructs us to install the tool in global bin folder
+	IsGlobal bool
+
 	// URL is the url to the archive containing the tool
 	URL string
 
-	// Hash is the hash of the downloade file
+	// Hash is the hash of the downloaded file
 	Hash string
 
 	// Binaries is the list of relative paths to binaries to install in local bin folder
@@ -54,7 +57,10 @@ func InstallTools(ctx context.Context, tools ...map[string]Tool) error {
 
 // EnsureTool ensures that tool exists, if not it is installed
 func EnsureTool(ctx context.Context, tool Tool) error {
-	binDir := binDir()
+	binDir := projectBinDir()
+	if tool.IsGlobal {
+		binDir = toolBinDir(ctx)
+	}
 	toolDir := toolDir(ctx, tool)
 	for dstBin, srcBin := range tool.Binaries {
 		srcPath, err := filepath.Abs(toolDir + "/" + srcBin)
@@ -112,7 +118,10 @@ func install(ctx context.Context, tool Tool) (retErr error) {
 			expectedChecksum, actualChecksum, tool.URL)
 	}
 
-	binDir := binDir()
+	binDir := projectBinDir()
+	if tool.IsGlobal {
+		binDir = toolBinDir(ctx)
+	}
 	for dstBin, srcBin := range tool.Binaries {
 		srcPath := toolDir + "/" + srcBin
 		dstPath := binDir + "/" + dstBin
@@ -292,8 +301,16 @@ func envDir(ctx context.Context) string {
 	return must.String(os.UserCacheDir()) + "/" + GetName(ctx)
 }
 
-func binDir() string {
-	if err := os.MkdirAll("./bin", 0o755); err != nil && !os.IsExist(err) {
+func toolBinDir(ctx context.Context) string {
+	dir := filepath.Join(envDir(ctx), "bin")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		panic(err)
+	}
+	return must.String(filepath.Abs(dir))
+}
+
+func projectBinDir() string {
+	if err := os.MkdirAll("./bin", 0o755); err != nil {
 		panic(err)
 	}
 	return must.String(filepath.Abs("./bin"))
