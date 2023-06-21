@@ -175,7 +175,7 @@ func Main(name string, containerBuilder func(c *ioc.Container), commands map[str
 
 		ctx = withName(ctx, name)
 		changeWorkingDir()
-		setPath()
+		setPath(ctx)
 		if len(flags.Args()) == 0 {
 			return activate(ctx, name)
 		}
@@ -204,18 +204,19 @@ func listCommands(commands map[string]Command) {
 	fmt.Println("")
 }
 
-func setPath() {
-	binDir := binDir()
+func setPath(ctx context.Context) {
+	toolBinDir := toolBinDir(ctx)
+	projectBinDir := projectBinDir()
 	var path string
 	for _, p := range strings.Split(os.Getenv("PATH"), ":") {
-		if !strings.HasPrefix(p, binDir) {
+		if !strings.HasPrefix(p, toolBinDir) && !strings.HasPrefix(p, projectBinDir) {
 			if path != "" {
 				path += ":"
 			}
 			path += p
 		}
 	}
-	must.OK(os.Setenv("PATH", binDir+"/tools:"+binDir+":"+path))
+	must.OK(os.Setenv("PATH", projectBinDir+":"+toolBinDir+":"+path))
 }
 
 func activate(ctx context.Context, name string) error {
