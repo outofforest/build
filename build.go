@@ -156,8 +156,8 @@ func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) 
 
 // Main receives configuration and runs commands
 func Main(name string, containerBuilder func(c *ioc.Container), commands map[string]Command) {
-	run.Tool("build", containerBuilder, func(ctx context.Context, c *ioc.Container) error {
-		flags := logger.Flags(logger.ToolDefaultConfig, "build")
+	run.Run("build", containerBuilder, func(ctx context.Context, c *ioc.Container) error {
+		flags := logger.Flags(logger.DefaultConfig, "build")
 		if err := flags.Parse(os.Args[1:]); err != nil {
 			return err
 		}
