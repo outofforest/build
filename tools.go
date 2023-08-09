@@ -161,7 +161,7 @@ func hasher(hashStr string) (hash.Hash, string) {
 
 func store(url string, reader io.Reader, path string) error {
 	switch {
-	case strings.HasSuffix(url, ".tar.gz"):
+	case strings.HasSuffix(url, ".tar.gz") || strings.HasSuffix(url, ".tgz"):
 		var err error
 		reader, err = gzip.NewReader(reader)
 		if err != nil {
@@ -225,7 +225,11 @@ func untar(reader io.Reader, path string) error {
 				return err
 			}
 		case header.Typeflag == tar.TypeLink:
+			header.Linkname = path + "/" + header.Linkname
 			if err := ensureDir(header.Name); err != nil {
+				return err
+			}
+			if err := ensureDir(header.Linkname); err != nil {
 				return err
 			}
 			// linked file may not exist yet, so let's create it - i will be overwritten later
