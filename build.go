@@ -212,6 +212,7 @@ func activate(ctx context.Context, name string) error {
 	bash := exec.Command("bash")
 	bash.Env = append(os.Environ(),
 		fmt.Sprintf("PS1=%s", "("+name+`) [\u@\h \W]\$ `),
+		fmt.Sprintf("PATH=%s:%s", filepath.Join(must.String(os.UserCacheDir()), name, "bin"), os.Getenv("PATH")),
 	)
 	bash.Stdin = os.Stdin
 	bash.Stdout = os.Stdout
