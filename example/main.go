@@ -10,7 +10,7 @@ import (
 )
 
 // Try running:
-// go run . @
+// go run . --help
 // go run . aCmd
 // go run . aCmd/aaCmd
 // go run . aCmd/abCmd
@@ -26,7 +26,7 @@ var commands = map[string]build.Command{
 }
 
 func main() {
-	build.Main("env-name", nil, commands)
+	build.Main("env-name", commands)
 }
 
 func commandA(ctx context.Context, deps build.DepsFunc) error {
@@ -36,12 +36,12 @@ func commandA(ctx context.Context, deps build.DepsFunc) error {
 	return nil
 }
 
-func commandAA(ctx context.Context) error {
+func commandAA(ctx context.Context, deps build.DepsFunc) error {
 	fmt.Println("AA executed")
 	return nil
 }
 
-func commandAB(ctx context.Context) error {
+func commandAB(ctx context.Context, deps build.DepsFunc) error {
 	fmt.Println("AB executed")
 	return nil
 }
@@ -52,11 +52,11 @@ func commandB(ctx context.Context, deps build.DepsFunc) error {
 	return nil
 }
 
-func commandBB(ctx context.Context) error {
+func commandBB(ctx context.Context, deps build.DepsFunc) error {
 	fmt.Println("BB returning error")
 	return errors.New("test error")
 }
 
-func commandC(ctx context.Context) error {
+func commandC(ctx context.Context, deps build.DepsFunc) error {
 	panic("test panic")
 }
