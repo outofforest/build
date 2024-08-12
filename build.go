@@ -144,12 +144,15 @@ func execute(ctx context.Context, name string, commands map[string]Command, path
 // Main receives configuration and runs commands
 func Main(name string, commands map[string]Command) {
 	run.New().Run("build", func(ctx context.Context) error {
+		var help bool
+
 		flags := logger.Flags(logger.DefaultConfig, "build")
+		flags.BoolVarP(&help, "help", "h", false, "")
 		if err := flags.Parse(os.Args[1:]); err != nil {
 			return err
 		}
 
-		if len(os.Args) >= 2 && os.Args[1] == "@" {
+		if help {
 			listCommands(commands)
 			return nil
 		}
