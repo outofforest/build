@@ -13,7 +13,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/outofforest/ioc/v2"
 	"github.com/outofforest/libexec"
 	"github.com/outofforest/logger"
 	"github.com/outofforest/run"
@@ -22,41 +21,32 @@ import (
 
 const maxStack = 100
 
+type CommandFunc func(ctx context.Context, deps DepsFunc) error
+
 type Command struct {
 	Description string
-	Fn          interface{}
+	Fn          CommandFunc
 }
 
 // DepsFunc represents function for executing dependencies
-type DepsFunc func(deps ...interface{})
+type DepsFunc func(deps ...CommandFunc)
 
-// Executor defines interface of command executor
-type Executor interface {
-	// Execute executes commands by their paths
-	Execute(ctx context.Context, name string, paths []string) error
-}
+func execute(ctx context.Context, name string, commands map[string]Command, paths []string) error {
+	pathsTrimmed := make([]string, 0, len(paths))
+	for _, p := range paths {
+		if p[len(p)-1] == '/' {
+			p = p[:len(p)-1]
+		}
+		pathsTrimmed = append(pathsTrimmed, p)
+	}
 
-// NewIoCExecutor returns new executor using IoC container to resolve parameters of commands
-func NewIoCExecutor(commands map[string]Command, c *ioc.Container) Executor {
-	return &iocExecutor{c: c, commands: commands}
-}
-
-type iocExecutor struct {
-	c        *ioc.Container
-	commands map[string]Command
-}
-
-func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) error {
 	executed := map[reflect.Value]bool{}
 	stack := map[reflect.Value]bool{}
-	c := e.c.SubContainer()
-	c.Singleton(func() context.Context {
-		return withName(ctx, name)
-	})
 
 	errReturn := errors.New("return")
 	errChan := make(chan error, 1)
-	worker := func(queue <-chan interface{}, done chan<- struct{}) {
+	var depsFunc DepsFunc
+	worker := func(queue <-chan CommandFunc, done chan<- struct{}) {
 		defer close(done)
 		defer func() {
 			if r := recover(); r != nil {
@@ -95,7 +85,7 @@ func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) 
 					err = errors.New("build: maximum length of stack reached")
 				default:
 					stack[cmdValue] = true
-					c.Call(cmd, &err)
+					err = cmd(ctx, depsFunc)
 					delete(stack, cmdValue)
 					executed[cmdValue] = true
 				}
@@ -107,8 +97,8 @@ func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) 
 			}
 		}
 	}
-	depsFunc := func(deps ...interface{}) {
-		queue := make(chan interface{})
+	depsFunc = func(deps ...CommandFunc) {
+		queue := make(chan CommandFunc)
 		done := make(chan struct{})
 		go worker(queue, done)
 	loop:
@@ -125,13 +115,10 @@ func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) 
 			panic(errReturn)
 		}
 	}
-	c.Singleton(func() DepsFunc {
-		return depsFunc
-	})
 
-	initDeps := make([]interface{}, 0, len(paths))
-	for _, p := range paths {
-		cmd, exists := e.commands[p]
+	initDeps := make([]CommandFunc, 0, len(pathsTrimmed))
+	for _, p := range pathsTrimmed {
+		cmd, exists := commands[p]
 		if !exists {
 			return errors.Errorf("build: command %s does not exist", p)
 		}
@@ -156,7 +143,7 @@ func (e *iocExecutor) Execute(ctx context.Context, name string, paths []string) 
 
 // Main receives configuration and runs commands
 func Main(name string, commands map[string]Command) {
-	run.New().Run("build", func(ctx context.Context, c *ioc.Container) error {
+	run.New().Run("build", func(ctx context.Context) error {
 		flags := logger.Flags(logger.DefaultConfig, "build")
 		if err := flags.Parse(os.Args[1:]); err != nil {
 			return err
@@ -167,7 +154,6 @@ func Main(name string, commands map[string]Command) {
 			return nil
 		}
 
-		executor := NewIoCExecutor(commands, c)
 		if isAutocomplete() {
 			autocompleteDo(commands)
 			return nil
@@ -179,7 +165,7 @@ func Main(name string, commands map[string]Command) {
 		if len(flags.Args()) == 0 {
 			return activate(ctx, name)
 		}
-		return execute(ctx, name, flags.Args(), executor)
+		return execute(ctx, name, commands, flags.Args())
 	})
 }
 
@@ -232,17 +218,6 @@ func activate(ctx context.Context, name string) error {
 		return nil
 	}
 	return err
-}
-
-func execute(ctx context.Context, name string, paths []string, executor Executor) error {
-	pathsTrimmed := make([]string, 0, len(paths))
-	for _, p := range paths {
-		if p[len(p)-1] == '/' {
-			p = p[:len(p)-1]
-		}
-		pathsTrimmed = append(pathsTrimmed, p)
-	}
-	return executor.Execute(ctx, name, pathsTrimmed)
 }
 
 func autocompletePrefix() (string, bool) {
