@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -13,7 +12,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/outofforest/libexec"
 	"github.com/outofforest/logger"
 	"github.com/outofforest/run"
 	"github.com/ridge/must"
@@ -144,17 +142,9 @@ func execute(ctx context.Context, name string, commands map[string]Command, path
 // Main receives configuration and runs commands
 func Main(name string, commands map[string]Command) {
 	run.New().Run("build", func(ctx context.Context) error {
-		var help bool
-
 		flags := logger.Flags(logger.DefaultConfig, "build")
-		flags.BoolVarP(&help, "help", "h", false, "")
 		if err := flags.Parse(os.Args[1:]); err != nil {
 			return err
-		}
-
-		if help {
-			listCommands(commands)
-			return nil
 		}
 
 		if isAutocomplete() {
@@ -162,12 +152,14 @@ func Main(name string, commands map[string]Command) {
 			return nil
 		}
 
+		if len(flags.Args()) == 0 {
+			listCommands(commands)
+			return nil
+		}
+
 		ctx = withName(ctx, name)
 		changeWorkingDir()
 		setPath(ctx)
-		if len(flags.Args()) == 0 {
-			return activate(ctx, name)
-		}
 		return execute(ctx, name, commands, flags.Args())
 	})
 }
@@ -206,22 +198,6 @@ func setPath(ctx context.Context) {
 		}
 	}
 	must.OK(os.Setenv("PATH", projectBinDir+":"+toolBinDir+":"+path))
-}
-
-func activate(ctx context.Context, name string) error {
-	bash := exec.Command("bash")
-	bash.Env = append(os.Environ(),
-		fmt.Sprintf("PS1=%s", "("+name+`) [\u@\h \W]\$ `),
-		fmt.Sprintf("PATH=%s:%s", filepath.Join(must.String(os.UserCacheDir()), name, "bin"), os.Getenv("PATH")),
-	)
-	bash.Stdin = os.Stdin
-	bash.Stdout = os.Stdout
-	bash.Stderr = os.Stderr
-	err := libexec.Exec(ctx, bash)
-	if bash.ProcessState != nil && bash.ProcessState.ExitCode() != 0 {
-		return nil
-	}
-	return err
 }
 
 func autocompletePrefix() (string, bool) {
