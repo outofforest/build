@@ -17,16 +17,15 @@ import (
 // go run . bCmd
 // go run . cCmd
 
-var commands = map[string]build.Command{
-	"aCmd":       {Fn: commandA, Description: "This is commandA"},
-	"aCmd/aaCmd": {Fn: commandAA, Description: "This is commandAA"},
-	"aCmd/abCmd": {Fn: commandAB, Description: "This is commandAB"},
-	"bCmd":       {Fn: commandB, Description: "This is commandB"},
-	"cCmd":       {Fn: commandC, Description: "This is commandC"},
-}
-
 func main() {
-	build.Main("env-name", commands)
+	build.RegisterCommands(map[string]build.Command{
+		"aCmd":       {Fn: commandA, Description: "This is commandA"},
+		"aCmd/aaCmd": {Fn: commandAA, Description: "This is commandAA"},
+		"aCmd/abCmd": {Fn: commandAB, Description: "This is commandAB"},
+		"bCmd":       {Fn: commandB, Description: "This is commandB"},
+		"cCmd":       {Fn: commandC, Description: "This is commandC"},
+	})
+	build.Main("env-name")
 }
 
 func commandA(ctx context.Context, deps build.DepsFunc) error {
