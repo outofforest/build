@@ -26,14 +26,16 @@ type commandRegistry struct {
 	commands map[string]Command
 }
 
-func (cr commandRegistry) RegisterCommands(commands map[string]Command) error {
-	for path := range commands {
-		if _, exists := cr.commands[path]; exists {
-			return errors.Errorf("command %s has already been registered", path)
+func (cr commandRegistry) RegisterCommands(commands ...map[string]Command) error {
+	for _, commandSet := range commands {
+		for path := range commandSet {
+			if _, exists := cr.commands[path]; exists {
+				return errors.Errorf("command %s has already been registered", path)
+			}
 		}
-	}
-	for path, command := range commands {
-		cr.commands[path] = command
+		for path, command := range commandSet {
+			cr.commands[path] = command
+		}
 	}
 	return nil
 }
