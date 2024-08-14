@@ -26,7 +26,7 @@ type commandRegistry struct {
 	commands map[string]Command
 }
 
-func (cr commandRegistry) RegisterCommands(commands ...map[string]Command) error {
+func (cr commandRegistry) RegisterCommands(commands []map[string]Command) error {
 	for _, commandSet := range commands {
 		for path := range commandSet {
 			if _, exists := cr.commands[path]; exists {
@@ -43,7 +43,7 @@ func (cr commandRegistry) RegisterCommands(commands ...map[string]Command) error
 var defaultCommandRegistry = newCommandRegistry()
 
 // RegisterCommands registers registeredCommands.
-func RegisterCommands(commands map[string]Command) {
+func RegisterCommands(commands ...map[string]Command) {
 	if err := defaultCommandRegistry.RegisterCommands(commands); err != nil {
 		panic(err)
 	}
