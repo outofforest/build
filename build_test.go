@@ -63,7 +63,7 @@ var tCtx = context.Background()
 func setup(ctx context.Context) (func(paths []string) error, map[int]string) {
 	r = map[int]string{}
 	return func(paths []string) error {
-		return execute(ctx, "test", map[string]Command{
+		return execute(ctx, map[string]Command{
 			"a":    {Fn: cmdA},
 			"a/aa": {Fn: cmdAA},
 			"a/ab": {Fn: cmdAB},
