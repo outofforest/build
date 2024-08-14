@@ -168,7 +168,7 @@ func listCommands(commands map[string]Command) {
 			maxLen = len(path)
 		}
 	}
-	fmt.Println("\n Available registeredCommands:")
+	fmt.Println("\n Available commands:")
 	fmt.Println()
 	for _, path := range paths {
 		fmt.Printf(fmt.Sprintf(`   %%-%ds`, maxLen)+"  %s\n", path, commands[path].Description)
