@@ -19,17 +19,7 @@ import (
 
 const maxStack = 100
 
-type CommandFunc func(ctx context.Context, deps DepsFunc) error
-
-type Command struct {
-	Description string
-	Fn          CommandFunc
-}
-
-// DepsFunc represents function for executing dependencies
-type DepsFunc func(deps ...CommandFunc)
-
-func execute(ctx context.Context, name string, commands map[string]Command, paths []string) error {
+func execute(ctx context.Context, commands map[string]Command, paths []string) error {
 	pathsTrimmed := make([]string, 0, len(paths))
 	for _, p := range paths {
 		if p[len(p)-1] == '/' {
@@ -139,8 +129,9 @@ func execute(ctx context.Context, name string, commands map[string]Command, path
 	return nil
 }
 
-// Main receives configuration and runs commands
-func Main(name string, commands map[string]Command) {
+// Main receives configuration and runs registeredCommands
+func Main(name string) {
+	commands := defaultCommandRegistry.commands
 	run.New().Run("build", func(ctx context.Context) error {
 		flags := logger.Flags(logger.DefaultConfig, "build")
 		if err := flags.Parse(os.Args[1:]); err != nil {
@@ -160,7 +151,7 @@ func Main(name string, commands map[string]Command) {
 		ctx = withName(ctx, name)
 		changeWorkingDir()
 		setPath(ctx)
-		return execute(ctx, name, commands, flags.Args())
+		return execute(ctx, commands, flags.Args())
 	})
 }
 
@@ -177,7 +168,7 @@ func listCommands(commands map[string]Command) {
 			maxLen = len(path)
 		}
 	}
-	fmt.Println("\n Available commands:")
+	fmt.Println("\n Available registeredCommands:")
 	fmt.Println()
 	for _, path := range paths {
 		fmt.Printf(fmt.Sprintf(`   %%-%ds`, maxLen)+"  %s\n", path, commands[path].Description)
