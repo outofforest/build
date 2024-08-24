@@ -16,9 +16,9 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/samber/lo"
 
 	"github.com/outofforest/logger"
-	"github.com/ridge/must"
 	"go.uber.org/zap"
 )
 
@@ -88,7 +88,7 @@ func install(ctx context.Context, tool Tool) (retErr error) {
 	log := logger.Get(ctx)
 	log.Info("Installing tool")
 
-	resp, err := http.DefaultClient.Do(must.HTTPRequest(http.NewRequestWithContext(ctx, http.MethodGet, tool.URL, nil)))
+	resp, err := http.DefaultClient.Do(lo.Must(http.NewRequestWithContext(ctx, http.MethodGet, tool.URL, nil)))
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func install(ctx context.Context, tool Tool) (retErr error) {
 	}
 	defer func() {
 		if retErr != nil {
-			must.OK(os.RemoveAll(toolDir))
+			lo.Must0(os.RemoveAll(toolDir))
 		}
 	}()
 
@@ -132,8 +132,8 @@ func install(ctx context.Context, tool Tool) (retErr error) {
 			panic(err)
 		}
 
-		must.OK(os.Symlink(srcPath, dstPath))
-		must.Any(filepath.EvalSymlinks(dstPath))
+		lo.Must0(os.Symlink(srcPath, dstPath))
+		lo.Must(filepath.EvalSymlinks(dstPath))
 	}
 
 	log.Info("Tool installed")
@@ -302,7 +302,7 @@ func unzip(reader io.Reader, path string) error {
 }
 
 func envDir(ctx context.Context) string {
-	return must.String(os.UserCacheDir()) + "/" + GetName(ctx)
+	return lo.Must(os.UserCacheDir()) + "/" + GetName(ctx)
 }
 
 func toolBinDir(ctx context.Context) string {
@@ -310,14 +310,14 @@ func toolBinDir(ctx context.Context) string {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		panic(err)
 	}
-	return must.String(filepath.Abs(dir))
+	return lo.Must(filepath.Abs(dir))
 }
 
 func projectBinDir() string {
 	if err := os.MkdirAll("./bin", 0o755); err != nil {
 		panic(err)
 	}
-	return must.String(filepath.Abs("./bin"))
+	return lo.Must(filepath.Abs("./bin"))
 }
 
 func toolDir(ctx context.Context, tool Tool) string {
