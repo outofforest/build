@@ -11,10 +11,10 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/samber/lo"
 
 	"github.com/outofforest/logger"
 	"github.com/outofforest/run"
-	"github.com/ridge/must"
 )
 
 const maxStack = 100
@@ -188,7 +188,7 @@ func setPath(ctx context.Context) {
 			path += p
 		}
 	}
-	must.OK(os.Setenv("PATH", projectBinDir+":"+toolBinDir+":"+path))
+	lo.Must0(os.Setenv("PATH", projectBinDir+":"+toolBinDir+":"+path))
 }
 
 func autocompletePrefix() (string, bool) {
@@ -295,5 +295,5 @@ func longestPrefix(choices map[string]bool) string {
 }
 
 func changeWorkingDir() {
-	must.OK(os.Chdir(filepath.Dir(filepath.Dir(filepath.Dir(must.String(filepath.EvalSymlinks(must.String(os.Executable()))))))))
+	lo.Must0(os.Chdir(filepath.Dir(filepath.Dir(filepath.Dir(lo.Must(filepath.EvalSymlinks(lo.Must(os.Executable()))))))))
 }
