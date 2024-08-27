@@ -5,8 +5,8 @@ go 1.22
 replace github.com/outofforest/build/v2 => ../
 
 require (
-	github.com/outofforest/build/v2 v2.1.0
-	github.com/outofforest/tools v0.9.2-0.20240827053855-24ef9be6c7c8
+	github.com/outofforest/build/v2 v2.2.0
+	github.com/outofforest/tools v1.0.0
 )
 
 require (
