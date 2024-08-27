@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/outofforest/build/pkg/helpers"
-	"github.com/outofforest/build/pkg/types"
+	"github.com/outofforest/build/v2/pkg/helpers"
+	"github.com/outofforest/build/v2/pkg/types"
 )
 
 // Label used to tag docker resources created by localnet.

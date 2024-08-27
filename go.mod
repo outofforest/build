@@ -1,4 +1,4 @@
-module github.com/outofforest/build
+module github.com/outofforest/build/v2
 
 go 1.22
 

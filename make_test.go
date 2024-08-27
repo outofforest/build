@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/outofforest/build/pkg/types"
+	"github.com/outofforest/build/v2/pkg/types"
 )
 
 var r = map[int]string{}

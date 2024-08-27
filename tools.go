@@ -19,7 +19,7 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 
-	"github.com/outofforest/build/pkg/tools"
+	"github.com/outofforest/build/v2/pkg/tools"
 	"github.com/outofforest/logger"
 )
 
