@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/outofforest/libexec"
 	"github.com/pkg/errors"
 
 	"github.com/outofforest/build/pkg/types"
+	"github.com/outofforest/libexec"
 )
 
 // IsStatusClean checks that there are no uncommitted files in the repo.

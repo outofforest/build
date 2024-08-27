@@ -17,13 +17,12 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/outofforest/logger"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 
-	"github.com/outofforest/build"
 	"github.com/outofforest/build/pkg/types"
+	"github.com/outofforest/logger"
 )
 
 // Name is the type used for defining tool names.
@@ -308,7 +307,7 @@ func Get(toolName Name) (Tool, error) {
 
 // EnvDir returns the directory where local environment is stored.
 func EnvDir(ctx context.Context) string {
-	return filepath.Join(lo.Must(os.UserCacheDir()), build.GetName(ctx))
+	return filepath.Join(lo.Must(os.UserCacheDir()), GetName(ctx))
 }
 
 // PlatformDir returns the directory where platform-specific stuff is stored.

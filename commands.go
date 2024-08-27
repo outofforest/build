@@ -7,11 +7,11 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/outofforest/libexec"
 	"github.com/samber/lo"
 
 	"github.com/outofforest/build/pkg/tools"
 	"github.com/outofforest/build/pkg/types"
+	"github.com/outofforest/libexec"
 )
 
 // Commands is the list of standard commands useful for every environment.
@@ -20,16 +20,17 @@ var Commands = map[string]types.Command{
 		Description: "Enters the environment",
 		Fn:          enter,
 	},
-	// "build/me": {
-	//	Description: "Rebuilds the builder",
-	//	Fn: func(ctx context.Context, deps build.DepsFunc) error {
-	//		return golang.Build(ctx, deps, golang.BuildConfig{
-	//			Platform:      tools.PlatformLocal,
-	//			PackagePath:   "build/cmd/builder",
-	//			BinOutputPath: filepath.Join("bin", ".cache", filepath.Base(lo.Must(os.Executable()))),
-	//		})
-	//	},
-	// },
+	"build/me": {
+		Description: "Rebuilds the builder",
+		Fn: func(ctx context.Context, deps types.DepsFunc) error {
+			return nil
+			//return golang.Build(ctx, deps, golang.BuildConfig{
+			//	Platform:      tools.PlatformLocal,
+			//	PackagePath:   "build/cmd/builder",
+			//	BinOutputPath: filepath.Join("bin", ".cache", filepath.Base(lo.Must(os.Executable()))),
+			//})
+		},
+	},
 	"tools/setup": {
 		Description: "Installs all the tools for the host operating system",
 		Fn:          tools.EnsureAll,
@@ -43,7 +44,7 @@ var Commands = map[string]types.Command{
 func enter(ctx context.Context, deps types.DepsFunc) error {
 	bash := exec.Command("bash")
 	bash.Env = append(os.Environ(),
-		"PS1=("+GetName(ctx)+`) [\u@\h \W]\$ `,
+		"PS1=("+tools.GetName(ctx)+`) [\u@\h \W]\$ `,
 		fmt.Sprintf("PATH=%s:%s:%s",
 			filepath.Join(lo.Must(filepath.EvalSymlinks(lo.Must(filepath.Abs(".")))), "bin"),
 			filepath.Join(tools.VersionDir(ctx, tools.PlatformLocal), "bin"),

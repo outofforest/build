@@ -13,10 +13,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 
+	"github.com/outofforest/build/pkg/tools"
+	"github.com/outofforest/build/pkg/types"
 	"github.com/outofforest/logger"
 	"github.com/outofforest/run"
-
-	"github.com/outofforest/build/pkg/types"
 )
 
 const maxStack = 100
@@ -42,7 +42,7 @@ func Main(name string) {
 			return nil
 		}
 
-		ctx = withName(ctx, name)
+		ctx = tools.WithName(ctx, name)
 		changeWorkingDir()
 		setPath(ctx)
 		return execute(ctx, commands, flags.Args())

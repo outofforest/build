@@ -17,9 +17,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
-
-	"github.com/outofforest/logger"
 	"go.uber.org/zap"
+
+	"github.com/outofforest/build/pkg/tools"
+	"github.com/outofforest/logger"
 )
 
 // Tool represents the tool to be required by the build system
@@ -302,7 +303,7 @@ func unzip(reader io.Reader, path string) error {
 }
 
 func envDir(ctx context.Context) string {
-	return lo.Must(os.UserCacheDir()) + "/" + GetName(ctx)
+	return lo.Must(os.UserCacheDir()) + "/" + tools.GetName(ctx)
 }
 
 func toolBinDir(ctx context.Context) string {
