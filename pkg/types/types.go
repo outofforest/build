@@ -11,5 +11,5 @@ type Command struct {
 	Fn          CommandFunc
 }
 
-// DepsFunc represents function for executing dependencies
+// DepsFunc represents function for executing dependencies.
 type DepsFunc func(deps ...CommandFunc)

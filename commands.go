@@ -12,6 +12,7 @@ import (
 	"github.com/outofforest/build/v2/pkg/tools"
 	"github.com/outofforest/build/v2/pkg/types"
 	"github.com/outofforest/libexec"
+	"github.com/outofforest/tools/pkg/tools/golang"
 )
 
 // Commands is the list of standard commands useful for every environment.
@@ -23,12 +24,11 @@ var Commands = map[string]types.Command{
 	"build/me": {
 		Description: "Rebuilds the builder",
 		Fn: func(ctx context.Context, deps types.DepsFunc) error {
-			return nil
-			//return golang.Build(ctx, deps, golang.BuildConfig{
-			//	Platform:      tools.PlatformLocal,
-			//	PackagePath:   "build/cmd/builder",
-			//	BinOutputPath: filepath.Join("bin", ".cache", filepath.Base(lo.Must(os.Executable()))),
-			//})
+			return golang.Build(ctx, deps, golang.BuildConfig{
+				Platform:      tools.PlatformLocal,
+				PackagePath:   "build/cmd/builder",
+				BinOutputPath: filepath.Join("bin", ".cache", filepath.Base(lo.Must(os.Executable()))),
+			})
 		},
 	},
 	"tools/setup": {

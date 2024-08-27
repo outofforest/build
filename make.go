@@ -23,7 +23,7 @@ const maxStack = 100
 
 var defaultCommandRegistry = newCommandRegistry()
 
-// Main receives configuration and runs registeredCommands
+// Main receives configuration and runs registeredCommands.
 func Main(name, version string) {
 	commands := defaultCommandRegistry.commands
 	run.New().Run("build", func(ctx context.Context) error {
@@ -77,7 +77,7 @@ func execute(ctx context.Context, commands map[string]types.Command, paths []str
 			if r := recover(); r != nil {
 				var err error
 				if err2, ok := r.(error); ok {
-					if err2 == errReturn {
+					if errors.Is(err2, errReturn) {
 						return
 					}
 					err = err2
@@ -152,7 +152,7 @@ func execute(ctx context.Context, commands map[string]types.Command, paths []str
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
-				if err, ok := r.(error); ok && err == errReturn {
+				if err, ok := r.(error); ok && errors.Is(err, errReturn) {
 					return
 				}
 				panic(r)

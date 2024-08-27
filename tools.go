@@ -23,7 +23,7 @@ import (
 	"github.com/outofforest/logger"
 )
 
-// Tool represents the tool to be required by the build system
+// Tool represents the tool to be required by the build system.
 type Tool struct {
 	// Name is the name of the tool
 	Name string
@@ -44,7 +44,7 @@ type Tool struct {
 	Binaries map[string]string
 }
 
-// InstallTools installs tools
+// InstallTools installs tools.
 func InstallTools(ctx context.Context, tools ...map[string]Tool) error {
 	for _, t1 := range tools {
 		for _, t2 := range t1 {
@@ -56,7 +56,7 @@ func InstallTools(ctx context.Context, tools ...map[string]Tool) error {
 	return nil
 }
 
-// EnsureTool ensures that tool exists, if not it is installed
+// EnsureTool ensures that tool exists, if not it is installed.
 func EnsureTool(ctx context.Context, tool Tool) error {
 	binDir := projectBinDir()
 	if tool.IsGlobal {
@@ -196,7 +196,8 @@ func untar(reader io.Reader, path string) error {
 		}
 		header.Name = path + "/" + header.Name
 
-		// We take mode from header.FileInfo().Mode(), not from header.Mode because they may be in different formats (meaning of bits may be different).
+		// We take mode from header.FileInfo().Mode(), not from header.Mode because they may be
+		// in different formats (meaning of bits may be different).
 		// header.FileInfo().Mode() returns compatible value.
 		mode := header.FileInfo().Mode()
 

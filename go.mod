@@ -16,6 +16,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/outofforest/ioc/v2 v2.5.2 // indirect
 	github.com/outofforest/parallel v0.2.3 // indirect
+	github.com/outofforest/tools v0.9.2-0.20240827053855-24ef9be6c7c8 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/ridge/must v0.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
