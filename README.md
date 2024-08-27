@@ -2,12 +2,11 @@
 
 Yet another implementation of Makefile concept in go.
 Advantages over all the other available packages:
-- go only, except really small bash script
+- go only, except small bash script
 - no magic command discovery based on go source code, you explicitly
   declare paths and functions for your commands
 - bash autocompletion supported
-- command functions are executed using IoC container so they may receive
-  any interfaces required to do the job
+- set of standard commands
   
 ## Example
 
@@ -16,18 +15,15 @@ Take a look at [example/main.go](../main/example/main.go)
 ## Compilation
 
 This build system is written in pure go so you have to compile it 
-using `go build` before first usage. Take a look at the [script](./build) I use in my setup.
+using `go build` before first usage. Take a look at the [script](./bin/builder) I use in my setup.
 
 I configure this script using `alias` feature delivered by `bash` in my `~/.bashrc`:
 
 ```
-alias projname="outofforest-build <path-to-project>"
+alias projname="<path-to-project>/bin/builder"
 ```
 
-`outofforest-build` is [this script](./build).
-Each release delivers rpm package for compatible distros, installing it in your system.
-
-Then I may call:
+Then you may execute:
 
 ```
 $ projname <command> <command>
@@ -84,7 +80,7 @@ If circular dependency is detected error is raised.
 Execute
 
 ```
-$ projname @
+$ projname
 ```
 
 to print available commands with their descriptions.

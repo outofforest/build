@@ -19,6 +19,53 @@ import (
 
 const maxStack = 100
 
+var defaultCommandRegistry = newCommandRegistry()
+
+// Main receives configuration and runs registeredCommands
+func Main(name string) {
+	commands := defaultCommandRegistry.commands
+	run.New().Run("build", func(ctx context.Context) error {
+		flags := logger.Flags(logger.DefaultConfig, "build")
+		if err := flags.Parse(os.Args[1:]); err != nil {
+			return err
+		}
+
+		if isAutocomplete() {
+			autocompleteDo(commands)
+			return nil
+		}
+
+		if len(flags.Args()) == 0 {
+			listCommands(commands)
+			return nil
+		}
+
+		ctx = withName(ctx, name)
+		changeWorkingDir()
+		setPath(ctx)
+		return execute(ctx, commands, flags.Args())
+	})
+}
+
+// CommandFunc represents function executing command.
+type CommandFunc func(ctx context.Context, deps DepsFunc) error
+
+// Command defines command.
+type Command struct {
+	Description string
+	Fn          CommandFunc
+}
+
+// DepsFunc represents function for executing dependencies
+type DepsFunc func(deps ...CommandFunc)
+
+// RegisterCommands registers registeredCommands.
+func RegisterCommands(commands ...map[string]Command) {
+	if err := defaultCommandRegistry.RegisterCommands(commands); err != nil {
+		panic(err)
+	}
+}
+
 func execute(ctx context.Context, commands map[string]Command, paths []string) error {
 	pathsTrimmed := make([]string, 0, len(paths))
 	for _, p := range paths {
@@ -127,32 +174,6 @@ func execute(ctx context.Context, commands map[string]Command, paths []string) e
 		return <-errChan
 	}
 	return nil
-}
-
-// Main receives configuration and runs registeredCommands
-func Main(name string) {
-	commands := defaultCommandRegistry.commands
-	run.New().Run("build", func(ctx context.Context) error {
-		flags := logger.Flags(logger.DefaultConfig, "build")
-		if err := flags.Parse(os.Args[1:]); err != nil {
-			return err
-		}
-
-		if isAutocomplete() {
-			autocompleteDo(commands)
-			return nil
-		}
-
-		if len(flags.Args()) == 0 {
-			listCommands(commands)
-			return nil
-		}
-
-		ctx = withName(ctx, name)
-		changeWorkingDir()
-		setPath(ctx)
-		return execute(ctx, commands, flags.Args())
-	})
 }
 
 func isAutocomplete() bool {
@@ -296,4 +317,28 @@ func longestPrefix(choices map[string]bool) string {
 
 func changeWorkingDir() {
 	lo.Must0(os.Chdir(filepath.Dir(filepath.Dir(filepath.Dir(lo.Must(filepath.EvalSymlinks(lo.Must(os.Executable()))))))))
+}
+
+func newCommandRegistry() commandRegistry {
+	return commandRegistry{
+		commands: map[string]Command{},
+	}
+}
+
+type commandRegistry struct {
+	commands map[string]Command
+}
+
+func (cr commandRegistry) RegisterCommands(commands []map[string]Command) error {
+	for _, commandSet := range commands {
+		for path := range commandSet {
+			if _, exists := cr.commands[path]; exists {
+				return errors.Errorf("command %s has already been registered", path)
+			}
+		}
+		for path, command := range commandSet {
+			cr.commands[path] = command
+		}
+	}
+	return nil
 }
