@@ -16,7 +16,7 @@ func WithName(ctx context.Context, name string) context.Context {
 	return context.WithValue(ctx, nameField, name)
 }
 
-// GetName returns name passed to `Main` function
+// GetName returns name passed to `Main` function.
 func GetName(ctx context.Context) string {
 	return ctx.Value(nameField).(string)
 }
@@ -26,7 +26,7 @@ func WithVersion(ctx context.Context, version string) context.Context {
 	return context.WithValue(ctx, versionField, version)
 }
 
-// GetVersion returns version passed to `Main` function
+// GetVersion returns version passed to `Main` function.
 func GetVersion(ctx context.Context) string {
 	return ctx.Value(versionField).(string)
 }
