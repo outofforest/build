@@ -1,14 +1,13 @@
-package build
+package tools
 
-import (
-	"context"
-)
+import "context"
 
 type nameFiedType int
 
 const nameField nameFiedType = iota
 
-func withName(ctx context.Context, name string) context.Context {
+// WithName creates context with name embedded.
+func WithName(ctx context.Context, name string) context.Context {
 	return context.WithValue(ctx, nameField, name)
 }
 

@@ -5,55 +5,56 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/outofforest/build/pkg/types"
 )
 
 var r = map[int]string{}
 
-func cmdA(_ context.Context, deps DepsFunc) error {
+func cmdA(_ context.Context, deps types.DepsFunc) error {
 	deps(cmdAA, cmdAB)
 	r[len(r)] = "a"
 	return nil
 }
 
-func cmdAA(_ context.Context, deps DepsFunc) error {
+func cmdAA(_ context.Context, deps types.DepsFunc) error {
 	deps(cmdAC)
 	r[len(r)] = "aa"
 	return nil
 }
 
-func cmdAB(_ context.Context, deps DepsFunc) error {
+func cmdAB(_ context.Context, deps types.DepsFunc) error {
 	deps(cmdAC)
 	r[len(r)] = "ab"
 	return nil
 }
 
-func cmdAC(_ context.Context, deps DepsFunc) error {
+func cmdAC(_ context.Context, deps types.DepsFunc) error {
 	r[len(r)] = "ac"
 	return nil
 }
 
-func cmdB(_ context.Context, deps DepsFunc) error {
+func cmdB(_ context.Context, deps types.DepsFunc) error {
 	return errors.New("error")
 }
 
-func cmdC(_ context.Context, deps DepsFunc) error {
+func cmdC(_ context.Context, deps types.DepsFunc) error {
 	deps(cmdD)
 	return nil
 }
 
-func cmdD(_ context.Context, deps DepsFunc) error {
+func cmdD(_ context.Context, deps types.DepsFunc) error {
 	deps(cmdC)
 	return nil
 }
 
-func cmdE(_ context.Context, deps DepsFunc) error {
+func cmdE(_ context.Context, deps types.DepsFunc) error {
 	panic("panic")
 }
 
-func cmdF(ctx context.Context, deps DepsFunc) error {
+func cmdF(ctx context.Context, deps types.DepsFunc) error {
 	<-ctx.Done()
 	return ctx.Err()
 }
@@ -63,7 +64,7 @@ var tCtx = context.Background()
 func setup(ctx context.Context) (func(paths []string) error, map[int]string) {
 	r = map[int]string{}
 	return func(paths []string) error {
-		return execute(ctx, map[string]Command{
+		return execute(ctx, map[string]types.Command{
 			"a":    {Fn: cmdA},
 			"a/aa": {Fn: cmdAA},
 			"a/ab": {Fn: cmdAB},

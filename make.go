@@ -13,13 +13,50 @@ import (
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 
+	"github.com/outofforest/build/pkg/tools"
+	"github.com/outofforest/build/pkg/types"
 	"github.com/outofforest/logger"
 	"github.com/outofforest/run"
 )
 
 const maxStack = 100
 
-func execute(ctx context.Context, commands map[string]Command, paths []string) error {
+var defaultCommandRegistry = newCommandRegistry()
+
+// Main receives configuration and runs registeredCommands
+func Main(name string) {
+	commands := defaultCommandRegistry.commands
+	run.New().Run("build", func(ctx context.Context) error {
+		flags := logger.Flags(logger.DefaultConfig, "build")
+		if err := flags.Parse(os.Args[1:]); err != nil {
+			return err
+		}
+
+		if isAutocomplete() {
+			autocompleteDo(commands)
+			return nil
+		}
+
+		if len(flags.Args()) == 0 {
+			listCommands(commands)
+			return nil
+		}
+
+		ctx = tools.WithName(ctx, name)
+		changeWorkingDir()
+		setPath(ctx)
+		return execute(ctx, commands, flags.Args())
+	})
+}
+
+// RegisterCommands registers registeredCommands.
+func RegisterCommands(commands ...map[string]types.Command) {
+	if err := defaultCommandRegistry.RegisterCommands(commands); err != nil {
+		panic(err)
+	}
+}
+
+func execute(ctx context.Context, commands map[string]types.Command, paths []string) error {
 	pathsTrimmed := make([]string, 0, len(paths))
 	for _, p := range paths {
 		if p[len(p)-1] == '/' {
@@ -33,8 +70,8 @@ func execute(ctx context.Context, commands map[string]Command, paths []string) e
 
 	errReturn := errors.New("return")
 	errChan := make(chan error, 1)
-	var depsFunc DepsFunc
-	worker := func(queue <-chan CommandFunc, done chan<- struct{}) {
+	var depsFunc types.DepsFunc
+	worker := func(queue <-chan types.CommandFunc, done chan<- struct{}) {
 		defer close(done)
 		defer func() {
 			if r := recover(); r != nil {
@@ -85,8 +122,8 @@ func execute(ctx context.Context, commands map[string]Command, paths []string) e
 			}
 		}
 	}
-	depsFunc = func(deps ...CommandFunc) {
-		queue := make(chan CommandFunc)
+	depsFunc = func(deps ...types.CommandFunc) {
+		queue := make(chan types.CommandFunc)
 		done := make(chan struct{})
 		go worker(queue, done)
 	loop:
@@ -104,7 +141,7 @@ func execute(ctx context.Context, commands map[string]Command, paths []string) e
 		}
 	}
 
-	initDeps := make([]CommandFunc, 0, len(pathsTrimmed))
+	initDeps := make([]types.CommandFunc, 0, len(pathsTrimmed))
 	for _, p := range pathsTrimmed {
 		cmd, exists := commands[p]
 		if !exists {
@@ -129,38 +166,12 @@ func execute(ctx context.Context, commands map[string]Command, paths []string) e
 	return nil
 }
 
-// Main receives configuration and runs registeredCommands
-func Main(name string) {
-	commands := defaultCommandRegistry.commands
-	run.New().Run("build", func(ctx context.Context) error {
-		flags := logger.Flags(logger.DefaultConfig, "build")
-		if err := flags.Parse(os.Args[1:]); err != nil {
-			return err
-		}
-
-		if isAutocomplete() {
-			autocompleteDo(commands)
-			return nil
-		}
-
-		if len(flags.Args()) == 0 {
-			listCommands(commands)
-			return nil
-		}
-
-		ctx = withName(ctx, name)
-		changeWorkingDir()
-		setPath(ctx)
-		return execute(ctx, commands, flags.Args())
-	})
-}
-
 func isAutocomplete() bool {
 	_, ok := autocompletePrefix()
 	return ok
 }
 
-func listCommands(commands map[string]Command) {
+func listCommands(commands map[string]types.Command) {
 	paths := paths(commands)
 	var maxLen int
 	for _, path := range paths {
@@ -210,7 +221,7 @@ func autocompletePrefix() (string, bool) {
 	return prefix[lastSpace:], true
 }
 
-func autocompleteDo(commands map[string]Command) {
+func autocompleteDo(commands map[string]types.Command) {
 	prefix, _ := autocompletePrefix()
 	choices := choicesForPrefix(paths(commands), prefix)
 	switch os.Getenv("COMP_TYPE") {
@@ -241,7 +252,7 @@ func autocompleteDo(commands map[string]Command) {
 	}
 }
 
-func paths(commands map[string]Command) []string {
+func paths(commands map[string]types.Command) []string {
 	paths := make([]string, 0, len(commands))
 	for path := range commands {
 		paths = append(paths, path)
@@ -296,4 +307,28 @@ func longestPrefix(choices map[string]bool) string {
 
 func changeWorkingDir() {
 	lo.Must0(os.Chdir(filepath.Dir(filepath.Dir(filepath.Dir(lo.Must(filepath.EvalSymlinks(lo.Must(os.Executable()))))))))
+}
+
+func newCommandRegistry() commandRegistry {
+	return commandRegistry{
+		commands: map[string]types.Command{},
+	}
+}
+
+type commandRegistry struct {
+	commands map[string]types.Command
+}
+
+func (cr commandRegistry) RegisterCommands(commands []map[string]types.Command) error {
+	for _, commandSet := range commands {
+		for path := range commandSet {
+			if _, exists := cr.commands[path]; exists {
+				return errors.Errorf("command %s has already been registered", path)
+			}
+		}
+		for path, command := range commandSet {
+			cr.commands[path] = command
+		}
+	}
+	return nil
 }

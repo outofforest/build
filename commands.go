@@ -2,49 +2,60 @@ package build
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
 
-	"github.com/pkg/errors"
+	"github.com/samber/lo"
+
+	"github.com/outofforest/build/pkg/tools"
+	"github.com/outofforest/build/pkg/types"
+	"github.com/outofforest/libexec"
 )
 
-type CommandFunc func(ctx context.Context, deps DepsFunc) error
-
-type Command struct {
-	Description string
-	Fn          CommandFunc
+// Commands is the list of standard commands useful for every environment.
+var Commands = map[string]types.Command{
+	"enter": {
+		Description: "Enters the environment",
+		Fn:          enter,
+	},
+	"build/me": {
+		Description: "Rebuilds the builder",
+		Fn: func(ctx context.Context, deps types.DepsFunc) error {
+			return nil
+			//return golang.Build(ctx, deps, golang.BuildConfig{
+			//	Platform:      tools.PlatformLocal,
+			//	PackagePath:   "build/cmd/builder",
+			//	BinOutputPath: filepath.Join("bin", ".cache", filepath.Base(lo.Must(os.Executable()))),
+			//})
+		},
+	},
+	"tools/setup": {
+		Description: "Installs all the tools for the host operating system",
+		Fn:          tools.EnsureAll,
+	},
+	"tools/verify": {
+		Description: "Verifies the checksums of all the tools",
+		Fn:          tools.VerifyChecksums,
+	},
 }
 
-// DepsFunc represents function for executing dependencies
-type DepsFunc func(deps ...CommandFunc)
-
-func newCommandRegistry() commandRegistry {
-	return commandRegistry{
-		commands: map[string]Command{},
+func enter(ctx context.Context, deps types.DepsFunc) error {
+	bash := exec.Command("bash")
+	bash.Env = append(os.Environ(),
+		"PS1=("+tools.GetName(ctx)+`) [\u@\h \W]\$ `,
+		fmt.Sprintf("PATH=%s:%s:%s",
+			filepath.Join(lo.Must(filepath.EvalSymlinks(lo.Must(filepath.Abs(".")))), "bin"),
+			filepath.Join(tools.VersionDir(ctx, tools.PlatformLocal), "bin"),
+			os.Getenv("PATH")),
+	)
+	bash.Stdin = os.Stdin
+	bash.Stdout = os.Stdout
+	bash.Stderr = os.Stderr
+	err := libexec.Exec(ctx, bash)
+	if bash.ProcessState != nil && bash.ProcessState.ExitCode() != 0 {
+		return nil
 	}
-}
-
-type commandRegistry struct {
-	commands map[string]Command
-}
-
-func (cr commandRegistry) RegisterCommands(commands []map[string]Command) error {
-	for _, commandSet := range commands {
-		for path := range commandSet {
-			if _, exists := cr.commands[path]; exists {
-				return errors.Errorf("command %s has already been registered", path)
-			}
-		}
-		for path, command := range commandSet {
-			cr.commands[path] = command
-		}
-	}
-	return nil
-}
-
-var defaultCommandRegistry = newCommandRegistry()
-
-// RegisterCommands registers registeredCommands.
-func RegisterCommands(commands ...map[string]Command) {
-	if err := defaultCommandRegistry.RegisterCommands(commands); err != nil {
-		panic(err)
-	}
+	return err
 }
