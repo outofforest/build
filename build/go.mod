@@ -2,9 +2,9 @@ module build
 
 go 1.22
 
-replace github.com/outofforest/build => ../
+replace github.com/outofforest/build/v2 => ../
 
-require github.com/outofforest/build v0.0.0
+require github.com/outofforest/build/v2 v2.0.0
 
 require (
 	github.com/outofforest/ioc/v2 v2.5.2 // indirect

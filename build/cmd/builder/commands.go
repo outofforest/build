@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"github.com/outofforest/build/pkg/types"
+	"github.com/outofforest/build/v2/pkg/types"
 )
 
 var commands = map[string]types.Command{

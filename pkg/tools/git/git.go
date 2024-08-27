@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/outofforest/build/pkg/types"
+	"github.com/outofforest/build/v2/pkg/types"
 	"github.com/outofforest/libexec"
 )
 

@@ -1,6 +1,6 @@
 package main
 
-import "github.com/outofforest/build"
+import "github.com/outofforest/build/v2"
 
 func main() {
 	build.RegisterCommands(
