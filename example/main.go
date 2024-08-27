@@ -26,7 +26,7 @@ func main() {
 		"bCmd":       {Fn: commandB, Description: "This is commandB"},
 		"cCmd":       {Fn: commandC, Description: "This is commandC"},
 	})
-	build.Main("env-name")
+	build.Main("env-name", "env-version")
 }
 
 func commandA(ctx context.Context, deps types.DepsFunc) error {

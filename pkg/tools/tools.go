@@ -14,7 +14,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"runtime/debug"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -287,7 +286,7 @@ func VerifyChecksums(ctx context.Context, _ types.DepsFunc) error {
 
 // VersionDir returns path to the version directory.
 func VersionDir(ctx context.Context, platform Platform) string {
-	return filepath.Join(PlatformDir(ctx, platform), EnvVersion())
+	return filepath.Join(PlatformDir(ctx, platform), GetVersion(ctx))
 }
 
 // Bin returns path to the installed binary.
@@ -434,45 +433,8 @@ func Checksum(file string) (string, error) {
 	return "sha256:" + hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
-// EnvVersion returns the version of the environment.
-func EnvVersion() string {
-	module := module()
-
-	bi, ok := debug.ReadBuildInfo()
-	if !ok {
-		panic("reading build info failed")
-	}
-
-	for _, m := range append([]*debug.Module{&bi.Main}, bi.Deps...) {
-		if m.Path != module {
-			continue
-		}
-		if m.Replace != nil {
-			m = m.Replace
-		}
-
-		if m.Version == "(devel)" {
-			return "devel"
-		}
-
-		return m.Version
-	}
-
-	panic("impossible condition: build module not found")
-}
-
 func downloadsDir(ctx context.Context, platform Platform) string {
 	return filepath.Join(PlatformDir(ctx, platform), "downloads")
-}
-
-func module() string {
-	_, file, _, _ := runtime.Caller(0)
-	module := strings.Join(strings.Split(file, "/")[:3], "/")
-	index := strings.Index(module, "@")
-	if index > 0 {
-		module = module[:index]
-	}
-	return module
 }
 
 func shouldRelinkFile(ctx context.Context, platform Platform, tool Tool, dst string) (bool, error) {
