@@ -24,7 +24,7 @@ const maxStack = 100
 var defaultCommandRegistry = newCommandRegistry()
 
 // Main receives configuration and runs registeredCommands
-func Main(name string) {
+func Main(name, version string) {
 	commands := defaultCommandRegistry.commands
 	run.New().Run("build", func(ctx context.Context) error {
 		flags := logger.Flags(logger.DefaultConfig, "build")
@@ -42,7 +42,7 @@ func Main(name string) {
 			return nil
 		}
 
-		ctx = tools.WithName(ctx, name)
+		ctx = tools.WithVersion(tools.WithName(ctx, name), version)
 		changeWorkingDir()
 		setPath(ctx)
 		return execute(ctx, commands, flags.Args())

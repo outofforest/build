@@ -7,5 +7,5 @@ func main() {
 		build.Commands,
 		commands,
 	)
-	build.Main("outofforest-build")
+	build.Main("outofforest-build", "devel")
 }
