@@ -9,11 +9,11 @@ import (
 	"github.com/outofforest/libexec"
 	"github.com/pkg/errors"
 
-	"github.com/outofforest/build"
+	"github.com/outofforest/build/pkg/types"
 )
 
 // IsStatusClean checks that there are no uncommitted files in the repo.
-func IsStatusClean(ctx context.Context, _ build.DepsFunc) error {
+func IsStatusClean(ctx context.Context, _ types.DepsFunc) error {
 	buf := &bytes.Buffer{}
 	cmd := exec.Command("git", "status", "-s")
 	cmd.Stdout = buf

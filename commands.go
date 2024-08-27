@@ -11,10 +11,11 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/outofforest/build/pkg/tools"
+	"github.com/outofforest/build/pkg/types"
 )
 
 // Commands is the list of standard commands useful for every environment.
-var Commands = map[string]Command{
+var Commands = map[string]types.Command{
 	"enter": {
 		Description: "Enters the environment",
 		Fn:          enter,
@@ -39,7 +40,7 @@ var Commands = map[string]Command{
 	},
 }
 
-func enter(ctx context.Context, deps DepsFunc) error {
+func enter(ctx context.Context, deps types.DepsFunc) error {
 	bash := exec.Command("bash")
 	bash.Env = append(os.Environ(),
 		"PS1=("+GetName(ctx)+`) [\u@\h \W]\$ `,

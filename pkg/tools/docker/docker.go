@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/outofforest/build"
 	"github.com/outofforest/build/pkg/helpers"
+	"github.com/outofforest/build/pkg/types"
 )
 
 // Label used to tag docker resources created by localnet.
@@ -17,7 +17,7 @@ const (
 )
 
 // EnsureDocker verifies that docker is installed.
-func EnsureDocker(_ context.Context, _ build.DepsFunc) error {
+func EnsureDocker(_ context.Context, _ types.DepsFunc) error {
 	if _, err := exec.LookPath("docker"); err != nil {
 		return errors.Wrap(err, "docker command is not available in PATH")
 	}

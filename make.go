@@ -15,6 +15,8 @@ import (
 
 	"github.com/outofforest/logger"
 	"github.com/outofforest/run"
+
+	"github.com/outofforest/build/pkg/types"
 )
 
 const maxStack = 100
@@ -47,26 +49,14 @@ func Main(name string) {
 	})
 }
 
-// CommandFunc represents function executing command.
-type CommandFunc func(ctx context.Context, deps DepsFunc) error
-
-// Command defines command.
-type Command struct {
-	Description string
-	Fn          CommandFunc
-}
-
-// DepsFunc represents function for executing dependencies
-type DepsFunc func(deps ...CommandFunc)
-
 // RegisterCommands registers registeredCommands.
-func RegisterCommands(commands ...map[string]Command) {
+func RegisterCommands(commands ...map[string]types.Command) {
 	if err := defaultCommandRegistry.RegisterCommands(commands); err != nil {
 		panic(err)
 	}
 }
 
-func execute(ctx context.Context, commands map[string]Command, paths []string) error {
+func execute(ctx context.Context, commands map[string]types.Command, paths []string) error {
 	pathsTrimmed := make([]string, 0, len(paths))
 	for _, p := range paths {
 		if p[len(p)-1] == '/' {
@@ -80,8 +70,8 @@ func execute(ctx context.Context, commands map[string]Command, paths []string) e
 
 	errReturn := errors.New("return")
 	errChan := make(chan error, 1)
-	var depsFunc DepsFunc
-	worker := func(queue <-chan CommandFunc, done chan<- struct{}) {
+	var depsFunc types.DepsFunc
+	worker := func(queue <-chan types.CommandFunc, done chan<- struct{}) {
 		defer close(done)
 		defer func() {
 			if r := recover(); r != nil {
@@ -132,8 +122,8 @@ func execute(ctx context.Context, commands map[string]Command, paths []string) e
 			}
 		}
 	}
-	depsFunc = func(deps ...CommandFunc) {
-		queue := make(chan CommandFunc)
+	depsFunc = func(deps ...types.CommandFunc) {
+		queue := make(chan types.CommandFunc)
 		done := make(chan struct{})
 		go worker(queue, done)
 	loop:
@@ -151,7 +141,7 @@ func execute(ctx context.Context, commands map[string]Command, paths []string) e
 		}
 	}
 
-	initDeps := make([]CommandFunc, 0, len(pathsTrimmed))
+	initDeps := make([]types.CommandFunc, 0, len(pathsTrimmed))
 	for _, p := range pathsTrimmed {
 		cmd, exists := commands[p]
 		if !exists {
@@ -181,7 +171,7 @@ func isAutocomplete() bool {
 	return ok
 }
 
-func listCommands(commands map[string]Command) {
+func listCommands(commands map[string]types.Command) {
 	paths := paths(commands)
 	var maxLen int
 	for _, path := range paths {
@@ -231,7 +221,7 @@ func autocompletePrefix() (string, bool) {
 	return prefix[lastSpace:], true
 }
 
-func autocompleteDo(commands map[string]Command) {
+func autocompleteDo(commands map[string]types.Command) {
 	prefix, _ := autocompletePrefix()
 	choices := choicesForPrefix(paths(commands), prefix)
 	switch os.Getenv("COMP_TYPE") {
@@ -262,7 +252,7 @@ func autocompleteDo(commands map[string]Command) {
 	}
 }
 
-func paths(commands map[string]Command) []string {
+func paths(commands map[string]types.Command) []string {
 	paths := make([]string, 0, len(commands))
 	for path := range commands {
 		paths = append(paths, path)
@@ -321,15 +311,15 @@ func changeWorkingDir() {
 
 func newCommandRegistry() commandRegistry {
 	return commandRegistry{
-		commands: map[string]Command{},
+		commands: map[string]types.Command{},
 	}
 }
 
 type commandRegistry struct {
-	commands map[string]Command
+	commands map[string]types.Command
 }
 
-func (cr commandRegistry) RegisterCommands(commands []map[string]Command) error {
+func (cr commandRegistry) RegisterCommands(commands []map[string]types.Command) error {
 	for _, commandSet := range commands {
 		for path := range commandSet {
 			if _, exists := cr.commands[path]; exists {

@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/outofforest/build"
+	"github.com/outofforest/build/pkg/types"
 )
 
 // Name is the type used for defining tool names.
@@ -247,7 +248,7 @@ func (bt BinaryTool) install(ctx context.Context, platform Platform) (retErr err
 }
 
 // EnsureAll ensures all the tools.
-func EnsureAll(ctx context.Context, _ build.DepsFunc) error {
+func EnsureAll(ctx context.Context, _ types.DepsFunc) error {
 	for _, tool := range toolsMap {
 		isCompatible, err := tool.IsCompatible(PlatformLocal)
 		if err != nil {
@@ -273,7 +274,7 @@ func Ensure(ctx context.Context, toolName Name, platform Platform) error {
 }
 
 // VerifyChecksums of all the tools.
-func VerifyChecksums(ctx context.Context, _ build.DepsFunc) error {
+func VerifyChecksums(ctx context.Context, _ types.DepsFunc) error {
 	allErrs := []error{}
 	for _, tool := range toolsMap {
 		errs, err := tool.Verify(ctx)

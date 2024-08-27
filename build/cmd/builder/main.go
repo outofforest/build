@@ -6,6 +6,7 @@ import (
 
 func main() {
 	build.RegisterCommands(
+		build.Commands,
 		commands,
 	)
 	build.Main("outofforest-build")
