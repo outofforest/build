@@ -20,8 +20,6 @@ github.com/outofforest/parallel v0.2.3 h1:DRIgHr7XTL4LLgsTqrj041kulv4ajtbCkRbkOG
 github.com/outofforest/parallel v0.2.3/go.mod h1:cu210xIjJtOMXR2ERzEcNA2kr0Z0xfZjSKw2jTxAQ2E=
 github.com/outofforest/run v0.6.0 h1:t/3vAodvU5L5vJ3BB0qRgfviX+T3JJmLgPN6G2WQs3U=
 github.com/outofforest/run v0.6.0/go.mod h1:l7TAtA/zG+7JEH017Qrfm7gzmMyM0gjd+CereJdJSpI=
-github.com/outofforest/tools v0.9.2-0.20240827052658-458f5609bab3 h1:ugvRqgappDW8oGGz0pVGZbopZGwNA4S1kgopHOhle8Q=
-github.com/outofforest/tools v0.9.2-0.20240827052658-458f5609bab3/go.mod h1:Pah6eXA0ExCJw9tyUg+1abbWLr0XezBLkRrzK+JJu8E=
 github.com/outofforest/tools v0.9.2-0.20240827053855-24ef9be6c7c8 h1:TSjzzewwWC9phCyg9GfPvIZqpqwPJZWivNtoLWXgjRQ=
 github.com/outofforest/tools v0.9.2-0.20240827053855-24ef9be6c7c8/go.mod h1:Pah6eXA0ExCJw9tyUg+1abbWLr0XezBLkRrzK+JJu8E=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
