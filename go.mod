@@ -6,7 +6,7 @@ require (
 	github.com/outofforest/libexec v0.3.9
 	github.com/outofforest/logger v0.5.4
 	github.com/outofforest/run v0.6.0
-	github.com/outofforest/tools v1.0.0
+	github.com/outofforest/tools v1.0.4
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.47.0
 	github.com/stretchr/testify v1.9.0
