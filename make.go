@@ -26,7 +26,7 @@ var defaultCommandRegistry = newCommandRegistry()
 // Main receives configuration and runs registeredCommands.
 func Main(name, version string) {
 	commands := defaultCommandRegistry.commands
-	run.New().Run("build", func(ctx context.Context) error {
+	run.New().Run(context.Background(), "build", func(ctx context.Context) error {
 		flags := logger.Flags(logger.DefaultConfig, "build")
 		if err := flags.Parse(os.Args[1:]); err != nil {
 			return err
