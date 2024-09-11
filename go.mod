@@ -1,6 +1,8 @@
 module github.com/outofforest/build/v2
 
-go 1.22
+go 1.22.0
+
+toolchain go1.22.6
 
 require (
 	github.com/outofforest/libexec v0.3.9
@@ -11,6 +13,7 @@ require (
 	github.com/samber/lo v1.47.0
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.27.0
+	golang.org/x/mod v0.21.0
 )
 
 require (
