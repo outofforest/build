@@ -18,6 +18,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
+	"github.com/ulikunitz/xz"
 	"go.uber.org/zap"
 
 	"github.com/outofforest/build/v2/pkg/types"
@@ -483,6 +484,20 @@ func saveFile(url string, reader io.Reader, path string) error {
 			return errors.WithStack(err)
 		}
 		return untar(reader, path)
+	case strings.HasSuffix(url, ".tar.xz"):
+		var err error
+		reader, err = xz.NewReader(reader)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		if err := untar(reader, path); err != nil {
+			return err
+		}
+
+		// For some reason the xz reader doesn't read the full stream.
+		// We need to read the rest to generate correct hash.
+		_, err = io.ReadAll(reader)
+		return errors.WithStack(err)
 	case strings.HasSuffix(url, ".zip"):
 		return unzip(reader, path)
 	default:
