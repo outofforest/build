@@ -126,8 +126,9 @@ func (bt BinaryTool) Verify(ctx context.Context) ([]error, error) {
 		}
 		actualChecksum := hex.EncodeToString(hasher.Sum(nil))
 		if actualChecksum != expectedChecksum {
-			errs = append(errs, errors.Errorf("checksum does not match for tool %s and platform %s, expected: %s,"+
-				"actual: %s, url: %s", bt.Name, platform, expectedChecksum, actualChecksum, source.URL))
+			//nolint:lll
+			errs = append(errs, errors.Errorf("checksum does not match for tool %s and platform %s, expected: %s, actual: %s, url: %s",
+				bt.Name, platform, expectedChecksum, actualChecksum, source.URL))
 		}
 	}
 	return errs, nil
