@@ -44,7 +44,6 @@ func Main(name, version string) {
 
 		ctx = tools.WithVersion(tools.WithName(ctx, name), version)
 		changeWorkingDir()
-		setPath(ctx)
 		return execute(ctx, commands, flags.Args())
 	})
 }
@@ -185,21 +184,6 @@ func listCommands(commands map[string]types.Command) {
 		fmt.Printf(fmt.Sprintf(`   %%-%ds`, maxLen)+"  %s\n", path, commands[path].Description)
 	}
 	fmt.Println("")
-}
-
-func setPath(ctx context.Context) {
-	toolBinDir := toolBinDir(ctx)
-	projectBinDir := projectBinDir()
-	var path string
-	for _, p := range strings.Split(os.Getenv("PATH"), ":") {
-		if !strings.HasPrefix(p, toolBinDir) && !strings.HasPrefix(p, projectBinDir) {
-			if path != "" {
-				path += ":"
-			}
-			path += p
-		}
-	}
-	lo.Must0(os.Setenv("PATH", projectBinDir+":"+toolBinDir+":"+path))
 }
 
 func autocompletePrefix() (string, bool) {
