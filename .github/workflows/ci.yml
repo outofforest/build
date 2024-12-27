@@ -9,8 +9,8 @@ jobs:
     strategy:
       matrix:
         command: [
-          "lint",
-          "test",
+          "lint/go",
+          "test/go",
         ]
 
     runs-on: ubuntu-latest
@@ -20,4 +20,4 @@ jobs:
         with:
           persist-credentials: false
       - name: Run ${{ matrix.command }}
-        run: bin/builder tidy ${{ matrix.command }} git/isclean
+        run: bin/builder tidy/go ${{ matrix.command }} git/isclean

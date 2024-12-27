@@ -10,7 +10,6 @@ func main() {
 	build.RegisterCommands(
 		build.Commands,
 		git.Commands,
-		commands,
 	)
 	tools.Main()
 }
