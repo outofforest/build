@@ -45,6 +45,7 @@ func enter(ctx context.Context, deps types.DepsFunc) error {
 	bash := exec.Command("bash")
 	bash.Env = append(os.Environ(),
 		"PS1=("+tools.GetName(ctx)+`) [\u@\h \W]\$ `,
+		"GOTOOLCHAIN=local",
 		fmt.Sprintf("PATH=%s:%s:%s",
 			filepath.Join(lo.Must(filepath.EvalSymlinks(lo.Must(filepath.Abs(".")))), "bin"),
 			filepath.Join(tools.VersionDir(ctx, tools.PlatformLocal), "bin"),

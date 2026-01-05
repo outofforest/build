@@ -530,12 +530,12 @@ func untar(reader io.Reader, path string) error {
 		// header.FileInfo().Mode() returns compatible value.
 		mode := header.FileInfo().Mode()
 
-		switch {
-		case header.Typeflag == tar.TypeDir:
+		switch header.Typeflag {
+		case tar.TypeDir:
 			if err := os.MkdirAll(header.Name, mode); err != nil && !os.IsExist(err) {
 				return errors.WithStack(err)
 			}
-		case header.Typeflag == tar.TypeReg:
+		case tar.TypeReg:
 			if err := ensureDir(header.Name); err != nil {
 				return err
 			}
@@ -549,14 +549,14 @@ func untar(reader io.Reader, path string) error {
 			if err != nil {
 				return errors.WithStack(err)
 			}
-		case header.Typeflag == tar.TypeSymlink:
+		case tar.TypeSymlink:
 			if err := ensureDir(header.Name); err != nil {
 				return err
 			}
 			if err := os.Symlink(header.Linkname, header.Name); err != nil {
 				return errors.WithStack(err)
 			}
-		case header.Typeflag == tar.TypeLink:
+		case tar.TypeLink:
 			header.Linkname = path + "/" + header.Linkname
 			if err := ensureDir(header.Name); err != nil {
 				return err
