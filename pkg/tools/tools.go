@@ -520,7 +520,7 @@ func untar(reader io.Reader, path string) error {
 			return nil
 		case err != nil:
 			return errors.WithStack(err)
-		case header == nil:
+		case header == nil || header.Name == "pax_global_header":
 			continue
 		}
 		header.Name = path + "/" + header.Name
@@ -577,7 +577,7 @@ func untar(reader io.Reader, path string) error {
 				return errors.WithStack(err)
 			}
 		default:
-			return errors.Errorf("unsupported file type: %d", header.Typeflag)
+			return errors.Errorf("unsupported file type: %d for %s", header.Typeflag, header.Name)
 		}
 	}
 }
