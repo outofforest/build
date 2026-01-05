@@ -1,14 +1,10 @@
 package tools
 
 import (
-	"archive/tar"
-	"archive/zip"
-	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	goerrors "errors"
-	"hash"
 	"io"
 	"net/http"
 	"os"
@@ -18,9 +14,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
-	"github.com/ulikunitz/xz"
 	"go.uber.org/zap"
 
+	"github.com/outofforest/archive"
 	"github.com/outofforest/build/v2/pkg/types"
 	"github.com/outofforest/logger"
 )
@@ -120,7 +116,10 @@ func (bt BinaryTool) Verify(ctx context.Context) ([]error, error) {
 		}
 		defer resp.Body.Close()
 
-		hasher, expectedChecksum := hasher(source.Hash)
+		hasher, _, expectedChecksum, err := archive.Hasher(source.Hash, resp.Body)
+		if err != nil {
+			return nil, err
+		}
 		_, err = io.Copy(hasher, resp.Body)
 		if err != nil {
 			return nil, errors.WithStack(err)
@@ -179,22 +178,29 @@ func (bt BinaryTool) install(ctx context.Context, platform Platform) (retErr err
 	}
 	defer resp.Body.Close()
 
-	hasher, expectedChecksum := hasher(source.Hash)
-	reader := io.TeeReader(resp.Body, hasher)
+	hasher, reader, expectedChecksum, err := archive.Hasher(source.Hash, resp.Body)
+	if err != nil {
+		return err
+	}
 	downloadDir := ToolDownloadDir(ctx, platform, bt)
 	if err := os.RemoveAll(downloadDir); err != nil && !os.IsNotExist(err) {
 		return err
 	}
-	if err := os.MkdirAll(downloadDir, 0o700); err != nil {
-		panic(err)
-	}
-	defer func() {
-		if retErr != nil {
-			lo.Must0(os.RemoveAll(downloadDir))
-		}
-	}()
 
-	if err := saveFile(source.URL, reader, downloadDir); err != nil {
+	err = archive.Inflate(source.URL, reader, downloadDir)
+	switch {
+	case err == nil:
+	case errors.Is(err, archive.ErrUnknownArchiveFormat):
+		f, err := os.OpenFile(filepath.Join(downloadDir, filepath.Base(source.URL)),
+			os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o700)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		defer f.Close()
+		if _, err := io.Copy(f, reader); err != nil {
+			return errors.WithStack(err)
+		}
+	default:
 		return err
 	}
 
@@ -370,13 +376,17 @@ func ShouldReinstall(ctx context.Context, platform Platform, tool Tool, dst, src
 		return true
 	}
 
-	hasher, expectedChecksum := hasher(linkNameParts[len(linkNameParts)-2] + ":" + linkNameParts[len(linkNameParts)-1])
 	f, err := os.Open(dstRealPath)
 	if err != nil {
 		return true
 	}
 	defer f.Close()
 
+	hasher, _, expectedChecksum, err := archive.Hasher(
+		linkNameParts[len(linkNameParts)-2]+":"+linkNameParts[len(linkNameParts)-1], f)
+	if err != nil {
+		return true
+	}
 	if _, err := io.Copy(hasher, f); err != nil {
 		return true
 	}
@@ -454,210 +464,4 @@ func shouldRelinkFile(ctx context.Context, platform Platform, tool Tool, dst str
 	}
 
 	return realSrcPath != realVersionedPath, nil
-}
-
-func hasher(hashStr string) (hash.Hash, string) {
-	parts := strings.SplitN(hashStr, ":", 2)
-	if len(parts) != 2 {
-		panic(errors.Errorf("incorrect checksum format: %s", hashStr))
-	}
-	hashAlgorithm := parts[0]
-	checksum := parts[1]
-
-	var hasher hash.Hash
-	switch hashAlgorithm {
-	case "sha256":
-		hasher = sha256.New()
-	default:
-		panic(errors.Errorf("unsupported hashing algorithm: %s", hashAlgorithm))
-	}
-
-	return hasher, strings.ToLower(checksum)
-}
-
-func saveFile(url string, reader io.Reader, path string) error {
-	switch {
-	case strings.HasSuffix(url, ".tar.gz") || strings.HasSuffix(url, ".tgz"):
-		var err error
-		reader, err = gzip.NewReader(reader)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		return untar(reader, path)
-	case strings.HasSuffix(url, ".tar.xz"):
-		var err error
-		reader, err = xz.NewReader(reader)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		if err := untar(reader, path); err != nil {
-			return err
-		}
-
-		// For some reason the xz reader doesn't read the full stream.
-		// We need to read the rest to generate correct hash.
-		_, err = io.ReadAll(reader)
-		return errors.WithStack(err)
-	case strings.HasSuffix(url, ".zip"):
-		return unzip(reader, path)
-	default:
-		f, err := os.OpenFile(filepath.Join(path, filepath.Base(url)), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o700)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		defer f.Close()
-		_, err = io.Copy(f, reader)
-		return errors.WithStack(err)
-	}
-}
-
-func untar(reader io.Reader, path string) error {
-	tr := tar.NewReader(reader)
-	for {
-		header, err := tr.Next()
-		switch {
-		case errors.Is(err, io.EOF):
-			return nil
-		case err != nil:
-			return errors.WithStack(err)
-		case header == nil || header.Name == "pax_global_header":
-			continue
-		}
-		header.Name = path + "/" + header.Name
-
-		// We take mode from header.FileInfo().Mode(), not from header.Mode because they may be in
-		// different formats (meaning of bits may be different).
-		// header.FileInfo().Mode() returns compatible value.
-		mode := header.FileInfo().Mode()
-
-		switch header.Typeflag {
-		case tar.TypeDir:
-			if err := os.MkdirAll(header.Name, mode); err != nil && !os.IsExist(err) {
-				return errors.WithStack(err)
-			}
-		case tar.TypeReg:
-			if err := ensureDir(header.Name); err != nil {
-				return err
-			}
-
-			f, err := os.OpenFile(header.Name, os.O_CREATE|os.O_WRONLY, mode)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-			_, err = io.Copy(f, tr)
-			_ = f.Close()
-			if err != nil {
-				return errors.WithStack(err)
-			}
-		case tar.TypeSymlink:
-			if err := ensureDir(header.Name); err != nil {
-				return err
-			}
-			if err := os.Symlink(header.Linkname, header.Name); err != nil {
-				return errors.WithStack(err)
-			}
-		case tar.TypeLink:
-			header.Linkname = path + "/" + header.Linkname
-			if err := ensureDir(header.Name); err != nil {
-				return err
-			}
-			if err := ensureDir(header.Linkname); err != nil {
-				return err
-			}
-			// linked file may not exist yet, so let's create it - it will be overwritten later
-			f, err := os.OpenFile(header.Linkname, os.O_CREATE|os.O_EXCL, mode)
-			if err != nil {
-				if !os.IsExist(err) {
-					return errors.WithStack(err)
-				}
-			} else {
-				_ = f.Close()
-			}
-			if err := os.Link(header.Linkname, header.Name); err != nil {
-				return errors.WithStack(err)
-			}
-		default:
-			return errors.Errorf("unsupported file type: %d for %s", header.Typeflag, header.Name)
-		}
-	}
-}
-
-func unzip(reader io.Reader, path string) error {
-	// Create a temporary file
-	tempFile, err := os.CreateTemp("", "zipfile")
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	defer os.Remove(tempFile.Name()) //nolint: errcheck
-
-	// Copy the contents of the reader to the temporary file
-	_, err = io.Copy(tempFile, reader)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	// Open the temporary file for reading
-	file, err := os.Open(tempFile.Name())
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	defer file.Close()
-
-	// Get the file information to obtain its size
-	fileInfo, err := file.Stat()
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	fileSize := fileInfo.Size()
-
-	// Use the file as a ReaderAt to unpack the zip file
-	zipReader, err := zip.NewReader(file, fileSize)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	// Process the files in the zip archive
-	for _, zf := range zipReader.File {
-		// Open each file in the archive
-		rc, err := zf.Open()
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		defer rc.Close()
-
-		// Construct the destination path for the file
-		destPath := filepath.Join(path, zf.Name)
-
-		// skip empty dirs
-		if zf.FileInfo().IsDir() {
-			continue
-		}
-
-		err = os.MkdirAll(filepath.Dir(destPath), os.ModePerm)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
-		// Create the file in the destination path
-		outputFile, err := os.Create(destPath)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		defer outputFile.Close()
-
-		// Copy the file contents
-		_, err = io.Copy(outputFile, rc)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-	}
-
-	return nil
-}
-
-func ensureDir(file string) error {
-	if err := os.MkdirAll(filepath.Dir(file), 0o700); !os.IsExist(err) {
-		return errors.WithStack(err)
-	}
-	return nil
 }
