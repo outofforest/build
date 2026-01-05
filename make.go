@@ -3,6 +3,7 @@ package build
 import (
 	"context"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -310,9 +311,7 @@ func (cr commandRegistry) RegisterCommands(commands []map[string]types.Command) 
 				return errors.Errorf("command %s has already been registered", path)
 			}
 		}
-		for path, command := range commandSet {
-			cr.commands[path] = command
-		}
+		maps.Copy(cr.commands, commandSet)
 	}
 	return nil
 }
