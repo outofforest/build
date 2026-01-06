@@ -10,7 +10,7 @@ require (
 )
 
 require (
-	github.com/outofforest/archive v0.3.0 // indirect
+	github.com/outofforest/archive v0.4.0 // indirect
 	github.com/outofforest/ioc/v2 v2.5.2 // indirect
 	github.com/outofforest/libexec v0.3.9 // indirect
 	github.com/outofforest/logger v0.6.0 // indirect
