@@ -3,7 +3,7 @@ module github.com/outofforest/build/v2
 go 1.24.0
 
 require (
-	github.com/outofforest/archive v0.1.0
+	github.com/outofforest/archive v0.3.0
 	github.com/outofforest/libexec v0.3.9
 	github.com/outofforest/logger v0.6.0
 	github.com/outofforest/run v0.8.0

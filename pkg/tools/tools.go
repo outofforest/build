@@ -116,19 +116,14 @@ func (bt BinaryTool) Verify(ctx context.Context) ([]error, error) {
 		}
 		defer resp.Body.Close()
 
-		hasher, _, expectedChecksum, err := archive.Hasher(source.Hash, resp.Body)
+		reader, err := archive.NewHashingReader(resp.Body, source.Hash)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "crearting hasher failed for tool %s and platform %s, url: %s",
+				bt.Name, platform, source.URL)
 		}
-		_, err = io.Copy(hasher, resp.Body)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		actualChecksum := hex.EncodeToString(hasher.Sum(nil))
-		if actualChecksum != expectedChecksum {
-			//nolint:lll
-			errs = append(errs, errors.Errorf("checksum does not match for tool %s and platform %s, expected: %s, actual: %s, url: %s",
-				bt.Name, platform, expectedChecksum, actualChecksum, source.URL))
+		if err := reader.ValidateChecksum(); err != nil {
+			errs = append(errs, errors.Wrapf(err, "checksum does not match for tool %s and platform %s, url: %s",
+				bt.Name, platform, source.URL))
 		}
 	}
 	return errs, nil
@@ -178,10 +173,12 @@ func (bt BinaryTool) install(ctx context.Context, platform Platform) (retErr err
 	}
 	defer resp.Body.Close()
 
-	hasher, reader, expectedChecksum, err := archive.Hasher(source.Hash, resp.Body)
+	reader, err := archive.NewHashingReader(resp.Body, source.Hash)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "crearting hasher failed for tool %s and platform %s, url: %s",
+			bt.Name, platform, source.URL)
 	}
+
 	downloadDir := ToolDownloadDir(ctx, platform, bt)
 	if err := os.RemoveAll(downloadDir); err != nil && !os.IsNotExist(err) {
 		return err
@@ -204,10 +201,8 @@ func (bt BinaryTool) install(ctx context.Context, platform Platform) (retErr err
 		return err
 	}
 
-	actualChecksum := hex.EncodeToString(hasher.Sum(nil))
-	if actualChecksum != expectedChecksum {
-		return errors.Errorf("checksum does not match for tool %s, expected: %s, actual: %s, url: %s", bt.Name,
-			expectedChecksum, actualChecksum, source.URL)
+	if err := reader.ValidateChecksum(); err != nil {
+		return errors.Wrapf(err, "checksum does not match for tool %s, url: %s", bt.Name, source.URL)
 	}
 
 	linksDir := ToolLinksDir(ctx, platform, bt)
@@ -382,17 +377,9 @@ func ShouldReinstall(ctx context.Context, platform Platform, tool Tool, dst, src
 	}
 	defer f.Close()
 
-	hasher, _, expectedChecksum, err := archive.Hasher(
-		linkNameParts[len(linkNameParts)-2]+":"+linkNameParts[len(linkNameParts)-1], f)
-	if err != nil {
-		return true
-	}
-	if _, err := io.Copy(hasher, f); err != nil {
-		return true
-	}
-
-	actualChecksum := hex.EncodeToString(hasher.Sum(nil))
-	return actualChecksum != expectedChecksum
+	reader, err := archive.NewHashingReader(f,
+		linkNameParts[len(linkNameParts)-2]+":"+linkNameParts[len(linkNameParts)-1])
+	return err != nil || reader.ValidateChecksum() != nil
 }
 
 // LinkFiles creates all the links for the tool.
