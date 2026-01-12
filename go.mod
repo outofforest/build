@@ -1,11 +1,11 @@
 module github.com/outofforest/build/v2
 
-go 1.24.0
+go 1.25
 
 require (
 	github.com/outofforest/archive v0.5.0
-	github.com/outofforest/libexec v0.3.9
-	github.com/outofforest/logger v0.6.0
+	github.com/outofforest/libexec v0.5.0
+	github.com/outofforest/logger v0.6.1
 	github.com/outofforest/run v0.8.0
 	github.com/outofforest/tools v1.2.0
 	github.com/pkg/errors v0.9.1

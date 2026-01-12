@@ -1,6 +1,6 @@
 module build
 
-go 1.24.0
+go 1.25
 
 replace github.com/outofforest/build/v2 => ../
 
@@ -12,8 +12,8 @@ require (
 require (
 	github.com/outofforest/archive v0.5.0 // indirect
 	github.com/outofforest/ioc/v2 v2.5.2 // indirect
-	github.com/outofforest/libexec v0.3.9 // indirect
-	github.com/outofforest/logger v0.6.0 // indirect
+	github.com/outofforest/libexec v0.5.0 // indirect
+	github.com/outofforest/logger v0.6.1 // indirect
 	github.com/outofforest/parallel v0.2.3 // indirect
 	github.com/outofforest/run v0.8.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

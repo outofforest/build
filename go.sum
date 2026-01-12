@@ -13,12 +13,11 @@ github.com/outofforest/archive v0.5.0 h1:i4qjGwpmw7wB1c0VQo5TV3cO019U7lvfJGL2P03
 github.com/outofforest/archive v0.5.0/go.mod h1:ZHLm4PQMKmHY3kM8sYqfqr46/y0jLwXcQ/IwbQM2NOw=
 github.com/outofforest/ioc/v2 v2.5.2 h1:4mNzLuzoZTXL/cO0qf1TrSYvejMgbZz5OUhdLzAUbek=
 github.com/outofforest/ioc/v2 v2.5.2/go.mod h1:yI+FHuHchC/t6nVo3WJ96qEgCXdHQKFI/4wW2/75YcU=
-github.com/outofforest/libexec v0.3.9 h1:KvVLuKDHqpydwNoKm+j36hi9DVPU61X4oHonlZ5cw88=
-github.com/outofforest/libexec v0.3.9/go.mod h1:J2rUB/m0ER8UNOHd3/UQM55bvh1cbMwhb8gibeF/zyo=
+github.com/outofforest/libexec v0.5.0 h1:r/06z211IJ6AINYda4Iue6HldziTslgL7wpbqiXPhL0=
+github.com/outofforest/libexec v0.5.0/go.mod h1:BRHkw11B0V9k5Y7cYWUtcRuM2+l9Tt4DQBncjb+IHeg=
 github.com/outofforest/logger v0.3.3/go.mod h1:+M5sO17Va9V33t28Qs9VqRQ8bFV501Uhq2PtQY+R3Ms=
-github.com/outofforest/logger v0.3.4/go.mod h1:wOsyVEu2nnueGK+IZuD1tOWYx6tXGV48earpJsDPT3Y=
-github.com/outofforest/logger v0.6.0 h1:x2A/6XRcDD/WOiWdp5RD60U3MHYwMsIhkHm1oYVeB0A=
-github.com/outofforest/logger v0.6.0/go.mod h1:BmKsJGfqah2NQw+yUjUZD1+uhZtTnfiJ2i1pU1HJgV8=
+github.com/outofforest/logger v0.6.1 h1:oNxe+4wCYBP8Mve5Tpt/gpDpdGYzuJSTD5epi8U/YQ0=
+github.com/outofforest/logger v0.6.1/go.mod h1:BmKsJGfqah2NQw+yUjUZD1+uhZtTnfiJ2i1pU1HJgV8=
 github.com/outofforest/parallel v0.2.3 h1:DRIgHr7XTL4LLgsTqrj041kulv4ajtbCkRbkOG5psWY=
 github.com/outofforest/parallel v0.2.3/go.mod h1:cu210xIjJtOMXR2ERzEcNA2kr0Z0xfZjSKw2jTxAQ2E=
 github.com/outofforest/run v0.8.0 h1:p3tSksh6AWzxsZ+baZzeQhgsfugKz6d6RaE7xfQYt5M=
@@ -58,7 +57,6 @@ go.uber.org/multierr v1.8.0/go.mod h1:7EAYxJLBy9rStEaz58O2t4Uvip6FSURkq8/ppBp95a
 go.uber.org/multierr v1.11.0 h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=
 go.uber.org/multierr v1.11.0/go.mod h1:20+QtiLqy0Nd6FdQB9TLXag12DsQkrbs3htMFfDN80Y=
 go.uber.org/zap v1.22.0/go.mod h1:H4siCOZOrAolnUPJEkfaSjDqyP+BDS0DdDWzwcgt3+U=
-go.uber.org/zap v1.24.0/go.mod h1:2kMP+WWQ8aoFoedH3T2sq6iJ2yDWpHbP0f6MQbS9Gkg=
 go.uber.org/zap v1.27.0 h1:aJMhYGrd5QSmlpLMr2MftRKl7t8J8PTZPA732ud/XR8=
 go.uber.org/zap v1.27.0/go.mod h1:GB2qFLM7cTU87MWRP2mPIjqfIDnGu+VIO4V/SdhGo2E=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
