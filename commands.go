@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 
 	"github.com/samber/lo"
 
@@ -54,6 +55,10 @@ func enter(ctx context.Context, deps types.DepsFunc) error {
 	bash.Stdin = os.Stdin
 	bash.Stdout = os.Stdout
 	bash.Stderr = os.Stderr
+	bash.SysProcAttr = &syscall.SysProcAttr{
+		Foreground: true,
+		Ctty:       int(os.Stdin.Fd()),
+	}
 	err := libexec.Exec(ctx, bash)
 	if bash.ProcessState != nil && bash.ProcessState.ExitCode() != 0 {
 		return nil
