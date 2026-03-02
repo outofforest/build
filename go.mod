@@ -9,7 +9,7 @@ require (
 	github.com/outofforest/run v0.8.0
 	github.com/outofforest/tools v1.4.3
 	github.com/pkg/errors v0.9.1
-	github.com/samber/lo v1.52.0
+	github.com/samber/lo v1.53.0
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.27.1
 	golang.org/x/mod v0.32.0
