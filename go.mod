@@ -1,6 +1,6 @@
 module github.com/outofforest/build/v2
 
-go 1.25
+go 1.25.0
 
 require (
 	github.com/outofforest/archive v0.5.0
@@ -12,7 +12,7 @@ require (
 	github.com/samber/lo v1.52.0
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.27.1
-	golang.org/x/mod v0.32.0
+	golang.org/x/mod v0.34.0
 )
 
 require (
